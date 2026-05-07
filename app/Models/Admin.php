@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens; 
 use App\Models\Reservasi;
 use App\Models\Review;
 
 class Admin extends Model
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory; 
 
     protected $guarded = ['id'];
 
