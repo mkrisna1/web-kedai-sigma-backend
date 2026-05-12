@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use App\Models\Reservasi;
 use App\Models\Pesanan;
 use App\Models\DetailPesanan;
-use App\Models\Review;
 
 class TransaksiSeeder extends Seeder
 {
@@ -53,13 +52,5 @@ class TransaksiSeeder extends Seeder
             'subtotal' => 15000
         ]);
 
-        // 4. Buat Dummy Review (Untuk pesanan di atas)
-        Review::create([
-            'pesanan_id' => $pesanan->id,
-            'nama_reviewer' => 'Siti',
-            'rating' => 5,
-            'komentar' => 'Kopinya mantap, kentangnya renyah! Pelayanan cepat.',
-            'balasan_admin' => null // Belum dibalas admin
-        ]);
     }
 }

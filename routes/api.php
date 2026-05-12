@@ -1,15 +1,14 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Admin\AuthController;
 
-// Route Public (Tidak perlu token)
-Route::post('/admin/login', [AuthController::class, 'login']);
+// Public routes
+Route::prefix('admin')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
-// Route Protected (Wajib pakai token dari admin guard)
-Route::middleware('auth:admin')->group(function () {
-    Route::post('/admin/logout', [AuthController::class, 'logout']);
-    
-    // Nanti semua route untuk nambah menu, edit meja, acc reservasi ditaruh di dalam sini
+// Protected routes (butuh token)
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
 });

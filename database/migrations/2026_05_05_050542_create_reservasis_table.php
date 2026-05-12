@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('reservasis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('meja_id')->constrained('mejas')->onDelete('cascade');
-            // nullable() karena saat pertama kali reservasi dibuat, belum ada admin yang proses
+            $table->foreignId('meja_id')->nullable()->constrained('mejas')->onDelete('set null');
             $table->foreignId('admin_id')->nullable()->constrained('admins'); 
             $table->string('nama_reservasi');
             $table->string('no_hp');
