@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Admin;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateReservasiStatusRequest;
@@ -16,9 +16,11 @@ class ReservasiController extends Controller
 
     public function index()
     {
+        $reservasis = $this->reservasiService->getAllForAdmin();
+
         return response()->json([
             'success' => true,
-            'data' => $this->reservasiService->getAllForAdmin(),
+            'data' => $reservasis,
         ]);
     }
 
@@ -26,15 +28,17 @@ class ReservasiController extends Controller
         UpdateReservasiStatusRequest $request,
         Reservasi $reservasi
     ) {
+        $updatedReservasi = $this->reservasiService->updateStatus(
+            $reservasi,
+            $request->validated()['status_reservasi'],
+            $request->user()?->id,
+            $request->validated()['meja_id'] ?? null
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Status reservasi berhasil diperbarui.',
-            'data' => $this->reservasiService->updateStatus(
-                $reservasi,
-                $request->validated()['status_reservasi'],
-                $request->user()?->id,
-                $request->validated()['meja_id'] ?? null
-            ),
+            'data' => $updatedReservasi,
         ]);
     }
 }

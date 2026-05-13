@@ -13,8 +13,6 @@ class DatabaseSeeder extends Seeder
             MejaSeeder::class,
             KategoriProdukSeeder::class,
             ProdukSeeder::class,
-            TransaksiSeeder::class,  
-            ReviewSeeder::class,     
         ]);
     }
 }

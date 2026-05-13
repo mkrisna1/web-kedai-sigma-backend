@@ -14,7 +14,7 @@ class ProdukSeeder extends Seeder
             'nama_produk' => 'Caffe Latte',
             'harga_produk' => 25000,
             'deskripsi_produk' => 'Espresso dengan susu segar berkualitas.',
-            'foto_produk' => 'latte.jpg',
+            'foto_produk' => '/storage/menu/latte.jpg',
             'ketersediaan_produk' => 'tersedia'
         ]);
 
@@ -23,7 +23,7 @@ class ProdukSeeder extends Seeder
             'nama_produk' => 'Kentang Goreng',
             'harga_produk' => 15000,
             'deskripsi_produk' => 'Kentang goreng renyah dengan taburan bumbu.',
-            'foto_produk' => 'kentang.jpg',
+            'foto_produk' => '/storage/menu/kentang.jpg',
             'ketersediaan_produk' => 'tersedia'
         ]);
     }

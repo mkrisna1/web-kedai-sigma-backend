@@ -15,7 +15,6 @@ class AuthService
         return false;
     }
 
-    $admin->tokens()->delete(); // hapus semua token lama
     $token = $admin->createToken('admin-token')->plainTextToken;
 
     return [

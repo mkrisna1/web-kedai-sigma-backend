@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('foto_produk')->nullable();
             $table->enum('ketersediaan_produk', ['tersedia', 'tidak_tersedia'])->default('tersedia');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -31,3 +32,4 @@ return new class extends Migration
         Schema::dropIfExists('produks');
     }
 };
+
