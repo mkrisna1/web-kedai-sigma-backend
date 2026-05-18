@@ -73,8 +73,9 @@ class OrderService
 
             $total = $items->reduce(function ($total, $item) use ($products) {
                 $product = $products[$item['produk_id']];
+                $price = $this->resolveProductPrice($product, $item['opsi_varian'] ?? null);
 
-                return $total + ((float) $product->harga_produk * (int) $item['jumlah_item']);
+                return $total + ($price * (int) $item['jumlah_item']);
             }, 0);
 
             $orderPayload = [
@@ -101,11 +102,12 @@ class OrderService
 
             foreach ($items as $item) {
                 $product = $products[$item['produk_id']];
+                $price = $this->resolveProductPrice($product, $item['opsi_varian'] ?? null);
 
                 $detailPayload = [
                     'id_produk' => $product->getKey(),
                     'jumlah_item' => (int) $item['jumlah_item'],
-                    'subtotal' => (float) $product->harga_produk * (int) $item['jumlah_item'],
+                    'subtotal' => $price * (int) $item['jumlah_item'],
                 ];
 
                 if ($hasDetailTableIdColumn) {
@@ -215,7 +217,7 @@ class OrderService
 
                 $detail->update([
                     'id_produk' => $replacement->getKey(),
-                    'subtotal' => (float) $replacement->harga_produk * $quantity,
+                    'subtotal' => $this->resolveProductPrice($replacement, null) * $quantity,
                     'opsi_varian' => "Pengganti {$oldProductName}",
                 ]);
             }
@@ -247,6 +249,21 @@ class OrderService
             ->whereKey($pesanan->id_meja)
             ->where('status_meja', 'active')
             ->update(['used_seats' => 1]);
+    }
+
+    private function resolveProductPrice(Produk $product, ?string $variant): float
+    {
+        $normalizedVariant = strtolower((string) $variant);
+
+        if (str_contains($normalizedVariant, 'hot') && $product->harga_hot !== null) {
+            return (float) $product->harga_hot;
+        }
+
+        if (str_contains($normalizedVariant, 'ice') && $product->harga_ice !== null) {
+            return (float) $product->harga_ice;
+        }
+
+        return (float) $product->harga_produk;
     }
 
     private function deleteExpiredCancelledOrders(): void

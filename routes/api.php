@@ -47,6 +47,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('/reservasi', [AdminReservasiController::class, 'index']);
     Route::patch('/reservasi/{reservasi}/status', [AdminReservasiController::class, 'updateStatus']);
+    Route::delete('/reservasi/{reservasi}', [AdminReservasiController::class, 'destroy']);
 
     Route::get('/review', [AdminReviewController::class, 'index']);
     Route::patch('/review/{review}/reply', [AdminReviewController::class, 'reply']);
@@ -63,6 +64,7 @@ Route::prefix('public')->group(function () {
     Route::get('/menu/{id}', [MenuController::class, 'show']);
 
     // Reservasi
+    Route::get('/reservasi/meja', [ReservasiController::class, 'tables']);
     Route::post('/reservasi', [ReservasiController::class, 'store']);
 
     // Review

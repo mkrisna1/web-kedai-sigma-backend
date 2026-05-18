@@ -55,6 +55,16 @@ class ProdukSeeder extends Seeder
         ];
 
         $hasTemperatureOption = Schema::hasColumn('produks', 'opsi_suhu');
+        $hasHotPrice = Schema::hasColumn('produks', 'harga_hot');
+        $hasIcePrice = Schema::hasColumn('produks', 'harga_ice');
+        $variantPrices = [
+            'Matcha' => ['hot' => 15000, 'ice' => 13000],
+            'Americano' => ['hot' => 10000, 'ice' => 13000],
+            'Coffee Latte' => ['hot' => 15000, 'ice' => 13000],
+            'Redvelvet' => ['hot' => 15000, 'ice' => 13000],
+            'Coklat Classic' => ['hot' => 13000, 'ice' => 13000],
+            'Coklat Classic Roti' => ['hot' => 15000, 'ice' => 15000],
+        ];
 
         foreach ($menus as [$name, $category, $price, $description, $temperatureOption]) {
             $payload = [
@@ -68,7 +78,17 @@ class ProdukSeeder extends Seeder
                 $payload['opsi_suhu'] = $temperatureOption;
             }
 
-            Produk::updateOrCreate(
+            if ($hasHotPrice) {
+                $payload['harga_hot'] = $variantPrices[$name]['hot']
+                    ?? ($temperatureOption === 'hot' ? $price : null);
+            }
+
+            if ($hasIcePrice) {
+                $payload['harga_ice'] = $variantPrices[$name]['ice']
+                    ?? ($temperatureOption === 'ice' ? $price : null);
+            }
+
+            Produk::withTrashed()->firstOrCreate(
                 ['nama_produk' => $name],
                 $payload
             );

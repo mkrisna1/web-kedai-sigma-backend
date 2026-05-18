@@ -102,6 +102,45 @@ class AdminMenuService
             $data['opsi_suhu'] = 'none';
         }
 
+        $hasHotPriceColumn = Schema::hasColumn('produks', 'harga_hot');
+        $hasIcePriceColumn = Schema::hasColumn('produks', 'harga_ice');
+
+        if (! $hasHotPriceColumn) {
+            unset($data['harga_hot']);
+        }
+
+        if (! $hasIcePriceColumn) {
+            unset($data['harga_ice']);
+        }
+
+        $temperatureOption = $data['opsi_suhu'] ?? 'none';
+
+        if ($hasHotPriceColumn && array_key_exists('harga_hot', $data) && $data['harga_hot'] === '') {
+            $data['harga_hot'] = null;
+        }
+
+        if ($hasIcePriceColumn && array_key_exists('harga_ice', $data) && $data['harga_ice'] === '') {
+            $data['harga_ice'] = null;
+        }
+
+        if ($temperatureOption === 'none') {
+            if ($hasHotPriceColumn) {
+                $data['harga_hot'] = null;
+            }
+
+            if ($hasIcePriceColumn) {
+                $data['harga_ice'] = null;
+            }
+        }
+
+        if ($temperatureOption === 'hot' && $hasIcePriceColumn) {
+            $data['harga_ice'] = null;
+        }
+
+        if ($temperatureOption === 'ice' && $hasHotPriceColumn) {
+            $data['harga_hot'] = null;
+        }
+
         return $data;
     }
 

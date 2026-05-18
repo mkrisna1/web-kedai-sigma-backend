@@ -70,6 +70,8 @@ class MenuController extends Controller
             'kategori_id' => [...$requiredRules, 'exists:kategori_produks,id_kategori'],
             'nama_produk' => [...$requiredRules, 'string', 'max:255'],
             'harga_produk' => [...$requiredRules, 'numeric', 'min:0'],
+            'harga_hot' => ['nullable', 'numeric', 'min:0'],
+            'harga_ice' => ['nullable', 'numeric', 'min:0'],
             'deskripsi_produk' => ['nullable', 'string'],
             'foto_produk' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'opsi_suhu' => ['nullable', 'in:none,hot,ice,hot_ice'],

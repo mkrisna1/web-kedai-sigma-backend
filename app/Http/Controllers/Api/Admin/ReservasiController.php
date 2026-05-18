@@ -26,15 +26,27 @@ class ReservasiController extends Controller
         UpdateReservasiStatusRequest $request,
         Reservasi $reservasi
     ) {
+        $validated = $request->validated();
+
         return response()->json([
             'success' => true,
             'message' => 'Status reservasi berhasil diperbarui.',
             'data' => $this->reservasiService->updateStatus(
                 $reservasi,
-                $request->validated()['status_reservasi'],
-                $request->user()?->id,
-                $request->validated()['meja_id'] ?? null
+                $validated['status_reservasi'],
+                $request->user()?->getKey(),
+                $validated['meja_id'] ?? null
             ),
+        ]);
+    }
+
+    public function destroy(Reservasi $reservasi)
+    {
+        $this->reservasiService->delete($reservasi);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservasi berhasil dihapus.',
         ]);
     }
 }
