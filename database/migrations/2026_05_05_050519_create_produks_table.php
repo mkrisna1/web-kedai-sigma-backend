@@ -12,10 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('produks', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('kategori_id')->constrained('kategori_produks')->onDelete('cascade');
+            $table->id('id_produk');
+            $table->foreignId('id_kategori')
+                ->constrained('kategori_produks', 'id_kategori')
+                ->onDelete('cascade');
             $table->string('nama_produk');
-             $table->decimal('harga_produk', 15, 2);
+            $table->decimal('harga_produk', 15, 2);
             $table->text('deskripsi_produk')->nullable();
             $table->string('foto_produk')->nullable();
             $table->enum('ketersediaan_produk', ['tersedia', 'tidak_tersedia'])->default('tersedia');
@@ -32,4 +34,3 @@ return new class extends Migration
         Schema::dropIfExists('produks');
     }
 };
-

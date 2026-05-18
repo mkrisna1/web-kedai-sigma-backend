@@ -15,7 +15,7 @@ class UpdateReservasiStatusRequest extends FormRequest
     {
         return [
             'status_reservasi' => 'required|in:dikonfirmasi,dibatalkan',
-            'meja_id' => 'nullable|exists:mejas,id',
+            'meja_id' => 'nullable|exists:mejas,id_meja',
         ];
     }
 }

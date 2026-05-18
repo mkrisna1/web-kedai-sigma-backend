@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Meja;
 use App\Models\Reservasi;
 
 class ReservasiService
@@ -9,8 +10,7 @@ class ReservasiService
     public function store(array $data): Reservasi
     {
         return Reservasi::create([
-            'meja_id'           => null,
-            'admin_id'          => null,
+            'id_meja'           => Meja::query()->orderBy('nomor_meja')->value('id_meja') ?? 1,
             'nama_reservasi'    => $data['nama_reservasi'],
             'no_hp'             => $data['no_hp'],
             'tgl_reservasi'     => $data['tgl_reservasi'],
@@ -23,7 +23,9 @@ class ReservasiService
 
     public function getAllForAdmin()
     {
-        return Reservasi::with(['meja', 'admin'])
+        $this->deleteExpiredCancelledReservations();
+
+        return Reservasi::with('meja')
             ->latest('created_at')
             ->get();
     }
@@ -35,16 +37,23 @@ class ReservasiService
         ?int $mejaId = null
     ): Reservasi {
         $data = [
-            'admin_id' => $adminId,
             'status_reservasi' => $statusReservasi,
         ];
 
         if ($mejaId !== null) {
-            $data['meja_id'] = $mejaId;
+            $data['id_meja'] = $mejaId;
         }
 
         $reservasi->update($data);
 
-        return $reservasi->fresh(['meja', 'admin']);
+        return $reservasi->fresh('meja');
+    }
+
+    private function deleteExpiredCancelledReservations(): void
+    {
+        Reservasi::query()
+            ->where('status_reservasi', 'dibatalkan')
+            ->where('updated_at', '<=', now()->subDays(3))
+            ->delete();
     }
 }

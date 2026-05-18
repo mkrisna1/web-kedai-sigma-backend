@@ -5,12 +5,23 @@ namespace App\Services;
 use App\Models\KategoriProduk;
 use App\Models\Produk;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class AdminMenuService
 {
+    private const CANONICAL_CATEGORIES = [
+        'Makanan',
+        'Kopi',
+        'Kopi Susu',
+        'Teh',
+        'Susu',
+    ];
+
     public function getAll()
     {
+        $this->ensureCanonicalCategories();
+
         return Produk::with('kategori')
             ->latest('created_at')
             ->get();
@@ -18,11 +29,18 @@ class AdminMenuService
 
     public function getCategories()
     {
-        return KategoriProduk::orderBy('nama_kategori')->get();
+        $this->ensureCanonicalCategories();
+
+        return KategoriProduk::whereIn('nama_kategori', self::CANONICAL_CATEGORIES)
+            ->get()
+            ->sortBy(fn ($category) => array_search($category->nama_kategori, self::CANONICAL_CATEGORIES, true))
+            ->values();
     }
 
     public function create(array $data, ?UploadedFile $photo = null): Produk
     {
+        $data = $this->normalizePayload($data);
+
         if ($photo) {
             $data['foto_produk'] = $this->storePhoto($photo);
         }
@@ -32,6 +50,8 @@ class AdminMenuService
 
     public function update(Produk $produk, array $data, ?UploadedFile $photo = null): Produk
     {
+        $data = $this->normalizePayload($data);
+
         if ($photo) {
             $this->deletePhoto($produk->foto_produk);
             $data['foto_produk'] = $this->storePhoto($photo);
@@ -68,5 +88,27 @@ class AdminMenuService
 
         Storage::disk('public')->delete(substr($path, strlen('/storage/')));
     }
-}
 
+    private function normalizePayload(array $data): array
+    {
+        if (array_key_exists('kategori_id', $data)) {
+            $data['id_kategori'] = $data['kategori_id'];
+            unset($data['kategori_id']);
+        }
+
+        if (! Schema::hasColumn('produks', 'opsi_suhu')) {
+            unset($data['opsi_suhu']);
+        } elseif (! array_key_exists('opsi_suhu', $data) || ! $data['opsi_suhu']) {
+            $data['opsi_suhu'] = 'none';
+        }
+
+        return $data;
+    }
+
+    private function ensureCanonicalCategories(): void
+    {
+        foreach (self::CANONICAL_CATEGORIES as $category) {
+            KategoriProduk::firstOrCreate(['nama_kategori' => $category]);
+        }
+    }
+}

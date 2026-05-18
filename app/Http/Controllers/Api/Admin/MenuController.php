@@ -67,11 +67,12 @@ class MenuController extends Controller
         $requiredRules = $required ? ['required'] : ['sometimes', 'required'];
 
         return [
-            'kategori_id' => [...$requiredRules, 'exists:kategori_produks,id'],
+            'kategori_id' => [...$requiredRules, 'exists:kategori_produks,id_kategori'],
             'nama_produk' => [...$requiredRules, 'string', 'max:255'],
             'harga_produk' => [...$requiredRules, 'numeric', 'min:0'],
             'deskripsi_produk' => ['nullable', 'string'],
             'foto_produk' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'opsi_suhu' => ['nullable', 'in:none,hot,ice,hot_ice'],
             'ketersediaan_produk' => [...$requiredRules, 'in:tersedia,tidak_tersedia'],
         ];
     }

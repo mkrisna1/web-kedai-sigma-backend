@@ -11,16 +11,23 @@ class Admin extends Authenticatable
 {
     use HasApiTokens, HasFactory; 
 
-    protected $guarded = ['id'];
+    protected $primaryKey = 'id_admin';
+    protected $guarded = ['id_admin'];
+    protected $appends = ['id'];
     protected $hidden = ['password'];
+
+    public function getIdAttribute()
+    {
+        return $this->getKey();
+    }
 
     public function reservasis()
     {
-        return $this->hasMany(Reservasi::class);
+        return $this->hasMany(Reservasi::class, 'id_admin', 'id_admin');
     }
 
     public function reviews()
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Review::class, 'id_admin', 'id_admin');
     }
 }

@@ -12,9 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pesanans', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('meja_id')->nullable()->constrained('mejas');
-            $table->foreignId('reservasi_id')->nullable()->constrained('reservasis')->onDelete('set null');
+            $table->id('id_pesanan');
+            $table->foreignId('id_meja')
+                ->nullable()
+                ->constrained('mejas', 'id_meja')
+                ->onDelete('set null');
+            $table->foreignId('id_reservasi')
+                ->nullable()
+                ->constrained('reservasis', 'id_reservasi')
+                ->onDelete('set null');
             $table->dateTime('tgl_pesanan');
             $table->enum('status_pesanan', ['menunggu_konfirmasi', 'diproses', 'selesai', 'dibatalkan'])->default('menunggu_konfirmasi');
             $table->enum('status_pembayaran', ['belum_bayar', 'lunas'])->default('belum_bayar');

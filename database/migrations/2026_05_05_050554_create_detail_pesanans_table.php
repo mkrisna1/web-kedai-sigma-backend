@@ -12,9 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('detail_pesanans', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('pesanan_id')->constrained('pesanans')->onDelete('cascade');
-            $table->foreignId('produk_id')->constrained('produks');
+            $table->id('id_detail');
+            $table->foreignId('id_pesanan')
+                ->constrained('pesanans', 'id_pesanan')
+                ->onDelete('cascade');
+            $table->foreignId('id_meja')
+                ->nullable()
+                ->constrained('mejas', 'id_meja')
+                ->nullOnDelete();
+            $table->string('nomor_meja')->nullable();
+            $table->foreignId('id_produk')
+                ->constrained('produks', 'id_produk');
             $table->integer('jumlah_item');
             $table->string('opsi_varian')->nullable(); // Contoh: "Ice", "Hot", "Less Sugar"
             $table->decimal('subtotal', 15, 2);

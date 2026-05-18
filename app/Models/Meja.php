@@ -11,15 +11,22 @@ class Meja extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $primaryKey = 'id_meja';
+    protected $guarded = ['id_meja'];
+    protected $appends = ['id'];
+
+    public function getIdAttribute()
+    {
+        return $this->getKey();
+    }
 
     public function reservasis()
     {
-        return $this->hasMany(Reservasi::class);
+        return $this->hasMany(Reservasi::class, 'id_meja', 'id_meja');
     }
 
     public function pesanans()
     {
-        return $this->hasMany(Pesanan::class);
+        return $this->hasMany(Pesanan::class, 'id_meja', 'id_meja');
     }
 }

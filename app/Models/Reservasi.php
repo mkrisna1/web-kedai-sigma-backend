@@ -12,20 +12,27 @@ class Reservasi extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $primaryKey = 'id_reservasi';
+    protected $guarded = ['id_reservasi'];
+    protected $appends = ['id'];
+
+    public function getIdAttribute()
+    {
+        return $this->getKey();
+    }
 
     public function meja()
     {
-        return $this->belongsTo(Meja::class);
+        return $this->belongsTo(Meja::class, 'id_meja', 'id_meja');
     }
 
     public function admin()
     {
-        return $this->belongsTo(Admin::class);
+        return $this->belongsTo(Admin::class, 'id_admin', 'id_admin');
     }
 
     public function pesanans()
     {
-        return $this->hasMany(Pesanan::class);
+        return $this->hasMany(Pesanan::class, 'id_reservasi', 'id_reservasi');
     }
 }

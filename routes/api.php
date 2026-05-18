@@ -42,6 +42,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::get('/pesanan', [AdminPesananController::class, 'index']);
     Route::patch('/pesanan/{pesanan}/status', [AdminPesananController::class, 'updateStatus']);
     Route::patch('/pesanan/{pesanan}/payment', [AdminPesananController::class, 'updatePayment']);
+    Route::patch('/pesanan/{pesanan}/stock-issue', [AdminPesananController::class, 'resolveStockIssue']);
     Route::get('/pesanan/{pesanan}/receipt', [AdminPesananController::class, 'receipt']);
 
     Route::get('/reservasi', [AdminReservasiController::class, 'index']);
@@ -49,6 +50,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('/review', [AdminReviewController::class, 'index']);
     Route::patch('/review/{review}/reply', [AdminReviewController::class, 'reply']);
+    Route::delete('/review/{review}', [AdminReviewController::class, 'destroy']);
 
     Route::get('/laporan', [LaporanController::class, 'index']);
 });
@@ -66,6 +68,7 @@ Route::prefix('public')->group(function () {
     // Review
     Route::get('/review', [ReviewController::class, 'index']);
     Route::post('/review', [ReviewController::class, 'store']);
+    Route::post('/review/{review}/like', [ReviewController::class, 'like'])->middleware('throttle:20,1');
 });
 
 Route::prefix('qr')->group(function () {

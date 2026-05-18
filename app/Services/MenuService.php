@@ -9,10 +9,10 @@ class MenuService
     public function getAvailable($kategoriId = null)
     {
         $query = Produk::with('kategori')
-            ->where('ketersediaan_produk', 'tersedia');
+            ->orderBy('nama_produk');
 
         if ($kategoriId) {
-            $query->where('kategori_id', $kategoriId);
+            $query->where('id_kategori', $kategoriId);
         }
 
         return $query->get();

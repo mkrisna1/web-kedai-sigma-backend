@@ -8,8 +8,8 @@ class AdminReviewService
 {
     public function getAll()
     {
-        return Review::with('admin')
-            ->latest('created_at')
+        return Review::query()
+            ->latest('waktu_dibuat')
             ->get();
     }
 
@@ -17,9 +17,13 @@ class AdminReviewService
     {
         $review->update([
             'balasan_admin' => $reply,
-            'admin_id' => $adminId,
         ]);
 
-        return $review->fresh('admin');
+        return $review->fresh();
+    }
+
+    public function delete(Review $review): void
+    {
+        $review->delete();
     }
 }
