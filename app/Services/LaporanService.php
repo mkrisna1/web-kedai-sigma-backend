@@ -51,6 +51,14 @@ class LaporanService
             })
             ->where('subtotal', '>', 0)
             ->get();
+        $detailsWithProduct = $details->filter(fn ($detail) => $detail->produk !== null);
+        $bestSellerDetails = DetailPesanan::with(['produk.kategori'])
+            ->whereHas('pesanan', function ($query) {
+                $query->where('status_pesanan', 'selesai');
+            })
+            ->where('subtotal', '>', 0)
+            ->get()
+            ->filter(fn ($detail) => $detail->produk !== null);
         $totalPenjualan = $validOrders->sum('total_harga');
         $totalOrder = $validOrders->count();
         $ordersForTraffic = $orders->where('status_pesanan', '!=', 'dibatalkan');
@@ -79,8 +87,8 @@ class LaporanService
                 'total_order' => $this->percentageChange($totalOrder, $previousTotalOrder),
                 'rata_rata_order' => $this->percentageChange($averageOrder, $previousAverageOrder),
             ],
-            'best_seller_menu' => $details
-                ->groupBy('id_produk')
+            'best_seller_menu' => $bestSellerDetails
+                ->groupBy(fn ($item) => $item->produk->getKey())
                 ->map(function ($items) {
                     return [
                         'produk' => $items->first()->produk,
@@ -94,8 +102,8 @@ class LaporanService
                 })
                 ->take(5)
                 ->values(),
-            'kategori_populer' => $details
-                ->groupBy(fn ($item) => $item->produk?->kategori?->nama_kategori ?? 'Tanpa Kategori')
+            'kategori_populer' => $detailsWithProduct
+                ->groupBy(fn ($item) => $item->produk->kategori?->nama_kategori ?? 'Tanpa Kategori')
                 ->map(fn ($items, $kategori) => [
                     'kategori' => $kategori,
                     'jumlah' => $items->sum('jumlah_item'),

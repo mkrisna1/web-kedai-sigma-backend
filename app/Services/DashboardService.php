@@ -31,12 +31,12 @@ class DashboardService
         );
         $incomeOrders = Pesanan::query()
             ->whereBetween('tgl_pesanan', [$start, $end])
-            ->where('status_pesanan', '!=', 'dibatalkan');
+            ->where('status_pesanan', 'selesai');
         [$previousStart, $previousEnd] = $this->resolvePreviousRange($period, $start, $end);
         $currentIncome = (clone $incomeOrders)->sum('total_harga');
         $previousIncome = Pesanan::query()
             ->whereBetween('tgl_pesanan', [$previousStart, $previousEnd])
-            ->where('status_pesanan', '!=', 'dibatalkan')
+            ->where('status_pesanan', 'selesai')
             ->sum('total_harga');
         $activeTables = Meja::query()->where('status_meja', '!=', 'maintenance');
         $totalTables = (clone $activeTables)->count();
@@ -51,13 +51,15 @@ class DashboardService
             'pendapatan_persen' => $this->percentageChange($currentIncome, $previousIncome),
             'pendapatan_harian' => Pesanan::query()
                 ->whereDate('tgl_pesanan', today())
-                ->where('status_pesanan', '!=', 'dibatalkan')
+                ->where('status_pesanan', 'selesai')
                 ->sum('total_harga'),
             'meja_terisi' => $occupiedTables,
             'meja_sisa' => $availableTables,
             'total_meja' => $totalTables,
             'reservasi_belum_diproses' => Reservasi::where('status_reservasi', 'menunggu_konfirmasi')->count(),
             'transaksi_terakhir' => Pesanan::with(['meja', 'detail_pesanans.produk'])
+                ->whereBetween('tgl_pesanan', [$start, $end])
+                ->where('status_pesanan', '!=', 'dibatalkan')
                 ->latest('tgl_pesanan')
                 ->limit(8)
                 ->get(),

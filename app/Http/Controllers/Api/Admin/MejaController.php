@@ -25,6 +25,10 @@ class MejaController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'nomor_meja' => $this->normalizeTableName($request->input('nomor_meja')),
+        ]);
+
         $data = $request->validate([
             'nomor_meja' => 'required|string|max:255|unique:mejas,nomor_meja',
             'status_meja' => 'required|in:active,maintenance',
@@ -44,6 +48,12 @@ class MejaController extends Controller
 
     public function update(Request $request, Meja $meja)
     {
+        if ($request->has('nomor_meja')) {
+            $request->merge([
+                'nomor_meja' => $this->normalizeTableName($request->input('nomor_meja')),
+            ]);
+        }
+
         $data = $request->validate([
             'nomor_meja' => [
                 'sometimes',
@@ -89,5 +99,16 @@ class MejaController extends Controller
     private function frontendOrigin(Request $request): ?string
     {
         return $request->headers->get('origin');
+    }
+
+    private function normalizeTableName(?string $value): string
+    {
+        $number = preg_match('/\d+/', (string) $value, $matches)
+            ? (int) $matches[0]
+            : null;
+
+        return $number
+            ? 'Meja ' . str_pad((string) $number, 2, '0', STR_PAD_LEFT)
+            : trim((string) $value);
     }
 }

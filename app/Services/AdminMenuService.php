@@ -63,7 +63,8 @@ class AdminMenuService
 
     public function delete(Produk $produk): void
     {
-        $produk->delete();
+        $this->deletePhoto($produk->foto_produk);
+        $produk->forceDelete();
     }
 
     private function storePhoto(UploadedFile $photo): string
