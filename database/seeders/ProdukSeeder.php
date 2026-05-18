@@ -14,7 +14,7 @@ class ProdukSeeder extends Seeder
         $kategoriIds = [
             'food' => KategoriProduk::firstOrCreate(['nama_kategori' => 'Makanan'])->getKey(),
             'coffee-based' => KategoriProduk::firstOrCreate(['nama_kategori' => 'Kopi'])->getKey(),
-            'coffee-milk' => KategoriProduk::firstOrCreate(['nama_kategori' => 'Kopi Susu'])->getKey(),
+            'coffee-milk' => KategoriProduk::firstOrCreate(['nama_kategori' => 'Kopi'])->getKey(),
             'tea-series' => KategoriProduk::firstOrCreate(['nama_kategori' => 'Teh'])->getKey(),
             'milk-series' => KategoriProduk::firstOrCreate(['nama_kategori' => 'Susu'])->getKey(),
         ];

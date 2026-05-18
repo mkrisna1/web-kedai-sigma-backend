@@ -9,7 +9,6 @@ class KategoriService
     private const CANONICAL_CATEGORIES = [
         'Makanan',
         'Kopi',
-        'Kopi Susu',
         'Teh',
         'Susu',
     ];
