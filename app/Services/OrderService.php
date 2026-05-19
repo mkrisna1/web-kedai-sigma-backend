@@ -162,6 +162,10 @@ class OrderService
                 $this->releaseTableWhenNoActiveOrders($pesanan);
             }
 
+            if ($status === 'selesai' && $this->isTakeawayOrder($pesanan)) {
+                $this->releaseTableWhenNoActiveOrders($pesanan);
+            }
+
             return $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']);
         });
     }
@@ -298,5 +302,10 @@ class OrderService
                 ->where('status_meja', 'active')
                 ->update(['used_seats' => 0]);
         }
+    }
+
+    private function isTakeawayOrder(Pesanan $pesanan): bool
+    {
+        return in_array($pesanan->tipe_pesanan, ['takeaway', 'take_away'], true);
     }
 }

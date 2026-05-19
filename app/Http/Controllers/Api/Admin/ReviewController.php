@@ -48,4 +48,13 @@ class ReviewController extends Controller
             'message' => 'Review berhasil dihapus.',
         ]);
     }
+
+    public function destroyPhoto(Review $review, int $photoIndex)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Foto review berhasil dihapus.',
+            'data' => $this->reviewService->deletePhoto($review, $photoIndex),
+        ]);
+    }
 }

@@ -91,6 +91,10 @@ class AdminMenuService
 
     private function normalizePayload(array $data): array
     {
+        if (array_key_exists('nama_produk', $data)) {
+            $data['nama_produk'] = trim((string) $data['nama_produk']);
+        }
+
         if (array_key_exists('kategori_id', $data)) {
             $data['id_kategori'] = $data['kategori_id'];
             unset($data['kategori_id']);

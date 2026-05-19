@@ -36,8 +36,21 @@ class ReviewService
 
     private function storePhotos(array $photos): array
     {
+        $seenHashes = [];
+
         return collect($photos)
             ->filter(fn ($photo) => $photo instanceof UploadedFile)
+            ->filter(function (UploadedFile $photo) use (&$seenHashes) {
+                $hash = hash_file('sha256', $photo->getRealPath());
+
+                if (isset($seenHashes[$hash])) {
+                    return false;
+                }
+
+                $seenHashes[$hash] = true;
+
+                return true;
+            })
             ->take(5)
             ->map(function (UploadedFile $photo) {
                 $directory = public_path('uploads/reviews');

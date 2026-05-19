@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use App\Services\AdminMenuService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class MenuController extends Controller
 {
@@ -32,6 +33,8 @@ class MenuController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizeRequest($request);
+
         $data = $request->validate($this->rules());
 
         return response()->json([
@@ -43,7 +46,9 @@ class MenuController extends Controller
 
     public function update(Request $request, Produk $produk)
     {
-        $data = $request->validate($this->rules(false));
+        $this->normalizeRequest($request);
+
+        $data = $request->validate($this->rules(false, $produk));
 
         return response()->json([
             'success' => true,
@@ -62,13 +67,18 @@ class MenuController extends Controller
         ]);
     }
 
-    private function rules(bool $required = true): array
+    private function rules(bool $required = true, ?Produk $produk = null): array
     {
         $requiredRules = $required ? ['required'] : ['sometimes', 'required'];
 
         return [
             'kategori_id' => [...$requiredRules, 'exists:kategori_produks,id_kategori'],
-            'nama_produk' => [...$requiredRules, 'string', 'max:255'],
+            'nama_produk' => [
+                ...$requiredRules,
+                'string',
+                'max:255',
+                Rule::unique('produks', 'nama_produk')->ignore($produk?->getKey(), 'id_produk'),
+            ],
             'harga_produk' => [...$requiredRules, 'numeric', 'min:0'],
             'harga_hot' => ['nullable', 'numeric', 'min:0'],
             'harga_ice' => ['nullable', 'numeric', 'min:0'],
@@ -77,5 +87,14 @@ class MenuController extends Controller
             'opsi_suhu' => ['nullable', 'in:none,hot,ice,hot_ice'],
             'ketersediaan_produk' => [...$requiredRules, 'in:tersedia,tidak_tersedia'],
         ];
+    }
+
+    private function normalizeRequest(Request $request): void
+    {
+        if ($request->has('nama_produk')) {
+            $request->merge([
+                'nama_produk' => trim((string) $request->input('nama_produk')),
+            ]);
+        }
     }
 }

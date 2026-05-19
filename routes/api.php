@@ -51,6 +51,8 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('/review', [AdminReviewController::class, 'index']);
     Route::patch('/review/{review}/reply', [AdminReviewController::class, 'reply']);
+    Route::delete('/review/{review}/photos/{photoIndex}', [AdminReviewController::class, 'destroyPhoto'])
+        ->whereNumber('photoIndex');
     Route::delete('/review/{review}', [AdminReviewController::class, 'destroy']);
 
     Route::get('/laporan', [LaporanController::class, 'index']);
