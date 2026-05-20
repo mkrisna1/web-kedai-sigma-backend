@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Meja;
 use App\Models\Pesanan;
 use App\Models\Reservasi;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -16,14 +17,21 @@ class ReservasiService
     ) {
     }
 
-    public function getAvailableTables(?int $guestCount = null): Collection
+    public function getAvailableTables(
+        ?int $guestCount = null,
+        ?string $reservationDate = null,
+        ?string $reservationTime = null
+    ): Collection
     {
         $this->tableAvailabilityService->releaseStaleOccupiedTables();
 
         $query = Meja::query()
             ->where('status_meja', 'active')
-            ->where('used_seats', '<=', 0)
             ->orderBy('nomor_meja');
+
+        if (! $reservationDate || $this->isReservationForToday($reservationDate)) {
+            $query->where('used_seats', '<=', 0);
+        }
 
         if ($guestCount !== null) {
             $query->where('capacity', '>=', $guestCount);
@@ -33,6 +41,15 @@ class ReservasiService
             }
         }
 
+        if ($reservationDate && $reservationTime) {
+            $query->whereDoesntHave('reservasis', function ($reservationQuery) use ($reservationDate, $reservationTime) {
+                $reservationQuery
+                    ->whereDate('tgl_reservasi', Carbon::parse($reservationDate)->toDateString())
+                    ->whereTime('jam_reservasi', $reservationTime)
+                    ->whereIn('status_reservasi', ['menunggu_konfirmasi', 'dikonfirmasi']);
+            });
+        }
+
         return $query->get();
     }
 
@@ -40,7 +57,12 @@ class ReservasiService
     {
         $this->tableAvailabilityService->releaseStaleOccupiedTables();
 
-        $meja = $this->resolveAvailableTable((int) $data['meja_id'], (int) $data['jml_orang']);
+        $meja = $this->resolveAvailableTable(
+            (int) $data['meja_id'],
+            (int) $data['jml_orang'],
+            $data['tgl_reservasi'],
+            $data['jam_reservasi']
+        );
 
         return Reservasi::create([
             'id_meja'           => $meja->getKey(),
@@ -84,6 +106,15 @@ class ReservasiService
                 $data['id_meja'] = $mejaId;
             }
 
+            if ($statusReservasi === 'dikonfirmasi') {
+                $this->ensureNoScheduleConflict(
+                    (int) ($data['id_meja'] ?? $reservasi->id_meja),
+                    $reservasi->tgl_reservasi,
+                    $reservasi->jam_reservasi,
+                    $reservasi->getKey()
+                );
+            }
+
             $reservasi->update($data);
             $reservasi->refresh();
 
@@ -121,7 +152,13 @@ class ReservasiService
             ->delete();
     }
 
-    private function resolveAvailableTable(int $mejaId, int $guestCount): Meja
+    private function resolveAvailableTable(
+        int $mejaId,
+        int $guestCount,
+        ?string $reservationDate = null,
+        ?string $reservationTime = null,
+        ?int $ignoredReservasiId = null
+    ): Meja
     {
         $meja = Meja::find($mejaId);
 
@@ -143,10 +180,22 @@ class ReservasiService
             ]);
         }
 
-        if ((int) $meja->used_seats > 0) {
+        if (
+            (! $reservationDate || $this->isReservationForToday($reservationDate)) &&
+            (int) $meja->used_seats > 0
+        ) {
             throw ValidationException::withMessages([
                 'meja_id' => 'Meja sedang terpakai.',
             ]);
+        }
+
+        if ($reservationDate && $reservationTime) {
+            $this->ensureNoScheduleConflict(
+                $meja->getKey(),
+                $reservationDate,
+                $reservationTime,
+                $ignoredReservasiId
+            );
         }
 
         return $meja;
@@ -161,6 +210,14 @@ class ReservasiService
             throw ValidationException::withMessages([
                 'meja_id' => 'Pilih meja reservasi terlebih dahulu.',
             ]);
+        }
+
+        if (! $this->isReservationForToday($reservasi->tgl_reservasi)) {
+            if ($previousMejaId && (int) $previousMejaId !== (int) $reservasi->id_meja) {
+                $this->releaseTableWhenUnusedById($previousMejaId, $reservasi->getKey());
+            }
+
+            return;
         }
 
         $meja = Meja::find($reservasi->id_meja);
@@ -206,6 +263,7 @@ class ReservasiService
         $hasConfirmedReservation = Reservasi::query()
             ->where('id_meja', $mejaId)
             ->where('status_reservasi', 'dikonfirmasi')
+            ->whereDate('tgl_reservasi', Carbon::now()->toDateString())
             ->when($ignoredReservasiId, fn ($query) => $query->where('id_reservasi', '!=', $ignoredReservasiId))
             ->exists();
 
@@ -222,5 +280,39 @@ class ReservasiService
             ->whereKey($mejaId)
             ->where('status_meja', 'active')
             ->update(['used_seats' => 0]);
+    }
+
+    private function ensureNoScheduleConflict(
+        int $mejaId,
+        ?string $reservationDate,
+        ?string $reservationTime,
+        ?int $ignoredReservasiId = null
+    ): void {
+        if (! $reservationDate || ! $reservationTime) {
+            return;
+        }
+
+        $hasConflict = Reservasi::query()
+            ->where('id_meja', $mejaId)
+            ->whereDate('tgl_reservasi', Carbon::parse($reservationDate)->toDateString())
+            ->whereTime('jam_reservasi', $reservationTime)
+            ->whereIn('status_reservasi', ['menunggu_konfirmasi', 'dikonfirmasi'])
+            ->when($ignoredReservasiId, fn ($query) => $query->where('id_reservasi', '!=', $ignoredReservasiId))
+            ->exists();
+
+        if ($hasConflict) {
+            throw ValidationException::withMessages([
+                'meja_id' => 'Meja sudah dipesan pada tanggal dan jam tersebut.',
+            ]);
+        }
+    }
+
+    private function isReservationForToday(?string $reservationDate): bool
+    {
+        if (! $reservationDate) {
+            return true;
+        }
+
+        return Carbon::parse($reservationDate)->isSameDay(Carbon::now());
     }
 }

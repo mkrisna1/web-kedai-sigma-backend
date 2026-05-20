@@ -63,6 +63,7 @@ Route::prefix('public')->group(function () {
     // Menu & Kategori (udah ada)
     Route::get('/kategori', [KategoriController::class, 'index']);
     Route::get('/menu', [MenuController::class, 'index']);
+    Route::get('/best-seller', [MenuController::class, 'bestSeller']);
     Route::get('/menu/{id}', [MenuController::class, 'show']);
 
     // Reservasi
@@ -78,4 +79,8 @@ Route::prefix('public')->group(function () {
 Route::prefix('qr')->group(function () {
     Route::get('/menu', [QrMenuController::class, 'index']);
     Route::post('/checkout', [CheckoutController::class, 'store']);
+    Route::get('/payment/config', [CheckoutController::class, 'paymentConfig']);
+    Route::get('/payment/{pesanan}/status', [CheckoutController::class, 'paymentStatus']);
 });
+
+Route::post('/payment/midtrans/notification', [CheckoutController::class, 'notification']);

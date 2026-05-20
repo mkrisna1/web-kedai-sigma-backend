@@ -19,10 +19,12 @@ class ReservasiController extends Controller
     public function tables(Request $request)
     {
         $guestCount = $request->integer('jml_orang') ?: null;
+        $date = $request->input('tgl_reservasi');
+        $time = $request->input('jam_reservasi');
 
         return response()->json([
             'success' => true,
-            'data' => $this->reservasiService->getAvailableTables($guestCount),
+            'data' => $this->reservasiService->getAvailableTables($guestCount, $date, $time),
         ]);
     }
 

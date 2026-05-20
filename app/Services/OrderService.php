@@ -13,7 +13,8 @@ use Illuminate\Validation\ValidationException;
 class OrderService
 {
     public function __construct(
-        protected TableAvailabilityService $tableAvailabilityService
+        protected TableAvailabilityService $tableAvailabilityService,
+        protected PaymentGatewayService $paymentGatewayService
     ) {
     }
 
@@ -41,6 +42,14 @@ class OrderService
             $data['tipe_pesanan'] = 'takeaway';
         }
 
+        $isQrPayment = ($data['metode_pembayaran'] ?? null) === 'qris';
+
+        if ($isQrPayment && ! $this->paymentGatewayService->isConfigured()) {
+            throw ValidationException::withMessages([
+                'metode_pembayaran' => 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
+            ]);
+        }
+
         return DB::transaction(function () use ($data) {
             $meja = Meja::find($data['meja_id']);
 
@@ -54,6 +63,7 @@ class OrderService
             $hasReservationColumn = Schema::hasColumn('pesanans', 'id_reservasi');
             $hasPaymentStatusColumn = Schema::hasColumn('pesanans', 'status_pembayaran');
             $hasOrderTypeColumn = Schema::hasColumn('pesanans', 'tipe_pesanan');
+            $hasPaymentMethodColumn = Schema::hasColumn('pesanans', 'metode_pembayaran');
             $hasItemVariantColumn = Schema::hasColumn('detail_pesanans', 'opsi_varian');
             $hasDetailTableIdColumn = Schema::hasColumn('detail_pesanans', 'id_meja');
             $hasDetailTableNumberColumn = Schema::hasColumn('detail_pesanans', 'nomor_meja');
@@ -98,6 +108,10 @@ class OrderService
                 $orderPayload['tipe_pesanan'] = $data['tipe_pesanan'];
             }
 
+            if ($hasPaymentMethodColumn) {
+                $orderPayload['metode_pembayaran'] = $data['metode_pembayaran'] ?? 'cash';
+            }
+
             $pesanan = Pesanan::create($orderPayload);
 
             foreach ($items as $item) {
@@ -125,6 +139,10 @@ class OrderService
                 $pesanan->detail_pesanans()->create($detailPayload);
             }
 
+            if (($data['metode_pembayaran'] ?? null) === 'qris') {
+                return $this->paymentGatewayService->createGoPayPayment($pesanan);
+            }
+
             return $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']);
         });
     }
@@ -142,14 +160,25 @@ class OrderService
     public function updateStatus(Pesanan $pesanan, string $status): Pesanan
     {
         return DB::transaction(function () use ($pesanan, $status) {
+            if (
+                in_array($status, ['diproses', 'selesai'], true) &&
+                $this->isOnlinePaymentOrder($pesanan) &&
+                $pesanan->status_pembayaran !== 'lunas'
+            ) {
+                throw ValidationException::withMessages([
+                    'status_pesanan' => 'Pembayaran QRIS belum dikonfirmasi oleh gateway.',
+                ]);
+            }
+
             $payload = [
                 'status_pesanan' => $status,
             ];
 
             if (Schema::hasColumn('pesanans', 'status_pembayaran')) {
-                $payload['status_pembayaran'] = $status === 'selesai'
-                    ? 'lunas'
-                    : 'belum_bayar';
+                $payload['status_pembayaran'] =
+                    $status === 'selesai' || $pesanan->status_pembayaran === 'lunas'
+                        ? 'lunas'
+                        : 'belum_bayar';
             }
 
             $pesanan->update($payload);
@@ -307,5 +336,11 @@ class OrderService
     private function isTakeawayOrder(Pesanan $pesanan): bool
     {
         return in_array($pesanan->tipe_pesanan, ['takeaway', 'take_away'], true);
+    }
+
+    private function isOnlinePaymentOrder(Pesanan $pesanan): bool
+    {
+        return Schema::hasColumn('pesanans', 'metode_pembayaran') &&
+            in_array($pesanan->metode_pembayaran, ['qris', 'gopay'], true);
     }
 }

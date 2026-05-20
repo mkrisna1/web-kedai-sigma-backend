@@ -100,7 +100,15 @@ class AdminMenuService
             unset($data['kategori_id']);
         }
 
-        if (! Schema::hasColumn('produks', 'opsi_suhu')) {
+        $categoryName = null;
+
+        if (! empty($data['id_kategori'])) {
+            $categoryName = KategoriProduk::whereKey($data['id_kategori'])->value('nama_kategori');
+        }
+
+        $hasTemperatureColumn = Schema::hasColumn('produks', 'opsi_suhu');
+
+        if (! $hasTemperatureColumn) {
             unset($data['opsi_suhu']);
         } elseif (! array_key_exists('opsi_suhu', $data) || ! $data['opsi_suhu']) {
             $data['opsi_suhu'] = 'none';
@@ -125,6 +133,27 @@ class AdminMenuService
 
         if ($hasIcePriceColumn && array_key_exists('harga_ice', $data) && $data['harga_ice'] === '') {
             $data['harga_ice'] = null;
+        }
+
+        if ($categoryName === 'Makanan') {
+            $temperatureOption = 'none';
+
+            if ($hasTemperatureColumn) {
+                $data['opsi_suhu'] = 'none';
+            }
+        }
+
+        if ($temperatureOption === 'hot_ice' && (float) ($data['harga_produk'] ?? 0) <= 0) {
+            $fallbackPrice = $data['harga_hot'] ?? $data['harga_ice'] ?? 0;
+            $data['harga_produk'] = $fallbackPrice;
+        }
+
+        if ($temperatureOption === 'hot' && (float) ($data['harga_produk'] ?? 0) <= 0 && isset($data['harga_hot'])) {
+            $data['harga_produk'] = $data['harga_hot'];
+        }
+
+        if ($temperatureOption === 'ice' && (float) ($data['harga_produk'] ?? 0) <= 0 && isset($data['harga_ice'])) {
+            $data['harga_produk'] = $data['harga_ice'];
         }
 
         if ($temperatureOption === 'none') {
