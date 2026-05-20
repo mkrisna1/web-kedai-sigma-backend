@@ -10,10 +10,18 @@ class KategoriProduk extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $table = 'kategori_produks';
+    protected $primaryKey = 'id_kategori';
+    protected $guarded = ['id_kategori'];
+    protected $appends = ['id'];
+
+    public function getIdAttribute()
+    {
+        return $this->getKey();
+    }
 
     public function produks()
     {
-        return $this->hasMany(Produk::class, 'kategori_id');
+        return $this->hasMany(Produk::class, 'id_kategori', 'id_kategori');
     }
 }

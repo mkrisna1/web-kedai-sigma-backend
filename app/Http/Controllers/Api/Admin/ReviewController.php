@@ -38,4 +38,23 @@ class ReviewController extends Controller
             ),
         ]);
     }
+
+    public function destroy(Review $review)
+    {
+        $this->reviewService->delete($review);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review berhasil dihapus.',
+        ]);
+    }
+
+    public function destroyPhoto(Review $review, int $photoIndex)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Foto review berhasil dihapus.',
+            'data' => $this->reviewService->deletePhoto($review, $photoIndex),
+        ]);
+    }
 }

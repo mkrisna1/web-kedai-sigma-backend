@@ -18,13 +18,15 @@ class LaporanController extends Controller
         $data = $request->validate([
             'period' => 'nullable|in:day,week,month',
             'date' => 'nullable|date',
+            'export_period' => 'nullable|in:day,month,year',
         ]);
 
         return response()->json([
             'success' => true,
             'data' => $this->laporanService->summary(
                 $data['period'] ?? 'day',
-                $data['date'] ?? null
+                $data['date'] ?? null,
+                $data['export_period'] ?? 'day'
             ),
         ]);
     }

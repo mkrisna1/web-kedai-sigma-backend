@@ -48,6 +48,26 @@ class PesananController extends Controller
         ]);
     }
 
+    public function resolveStockIssue(Request $request, Pesanan $pesanan)
+    {
+        $data = $request->validate([
+            'detail_id' => 'required|integer|exists:detail_pesanans,id_detail',
+            'action' => 'required|in:remove,replace',
+            'replacement_produk_id' => 'required_if:action,replace|nullable|integer|exists:produks,id_produk',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Perubahan stok pesanan berhasil disimpan.',
+            'data' => $this->orderService->resolveStockIssue(
+                $pesanan,
+                $data['detail_id'],
+                $data['action'],
+                $data['replacement_produk_id'] ?? null
+            ),
+        ]);
+    }
+
     public function receipt(Pesanan $pesanan)
     {
         return response()->json([

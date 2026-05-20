@@ -17,6 +17,8 @@ class StoreReviewRequest extends FormRequest
             'nama_pelanggan' => 'required|string|max:255',
             'rating'         => 'required|integer|min:1|max:5',
             'komentar'       => 'required|string',
+            'photos'         => 'nullable|array|max:5',
+            'photos.*'       => 'image|mimes:jpg,jpeg,png,webp',
         ];
     }
 }

@@ -12,21 +12,28 @@ class Pesanan extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $primaryKey = 'id_pesanan';
+    protected $guarded = ['id_pesanan'];
+    protected $appends = ['id'];
+
+    public function getIdAttribute()
+    {
+        return $this->getKey();
+    }
 
     public function meja()
     {
-        return $this->belongsTo(Meja::class);
+        return $this->belongsTo(Meja::class, 'id_meja', 'id_meja');
     }
 
     public function reservasi()
     {
-        return $this->belongsTo(Reservasi::class); 
+        return $this->belongsTo(Reservasi::class, 'id_reservasi', 'id_reservasi'); 
     }
 
     public function detail_pesanans()
     {
-        return $this->hasMany(DetailPesanan::class);
+        return $this->hasMany(DetailPesanan::class, 'id_pesanan', 'id_pesanan');
     }
 
 }

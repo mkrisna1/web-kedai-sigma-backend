@@ -9,10 +9,10 @@ class KategoriProdukSeeder extends Seeder
 {
     public function run()
     {
-        $kategoris = ['Kopi', 'Non-Kopi', 'Makanan Ringan', 'Makanan Berat'];
+        $kategoris = ['Makanan', 'Kopi', 'Teh', 'Susu'];
 
         foreach ($kategoris as $kategori) {
-            KategoriProduk::create([
+            KategoriProduk::firstOrCreate([
                 'nama_kategori' => $kategori
             ]);
         }

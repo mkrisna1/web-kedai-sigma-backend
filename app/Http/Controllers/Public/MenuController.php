@@ -41,4 +41,14 @@ class MenuController extends Controller
             'data' => $menu,
         ]);
     }
+
+    public function bestSeller(Request $request)
+    {
+        $limit = (int) $request->integer('limit', 5);
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->menuService->bestSellers($limit),
+        ]);
+    }
 }

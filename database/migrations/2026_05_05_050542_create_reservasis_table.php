@@ -12,9 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('reservasis', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('meja_id')->nullable()->constrained('mejas')->onDelete('set null');
-            $table->foreignId('admin_id')->nullable()->constrained('admins'); 
+            $table->id('id_reservasi');
+            $table->foreignId('id_meja')
+                ->nullable()
+                ->constrained('mejas', 'id_meja')
+                ->onDelete('set null');
+            $table->foreignId('id_admin')
+                ->nullable()
+                ->constrained('admins', 'id_admin')
+                ->onDelete('set null');
             $table->string('nama_reservasi');
             $table->string('no_hp');
             $table->date('tgl_reservasi');

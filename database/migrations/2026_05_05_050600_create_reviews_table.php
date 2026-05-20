@@ -12,13 +12,22 @@ return new class extends Migration
     public function up(): void
 {
     Schema::create('reviews', function (Blueprint $table) {
-        $table->id();
-        $table->string('nama_pelanggan'); 
-        $table->integer('rating'); 
+        $table->id('id_review');
+        $table->foreignId('id_pesanan')
+            ->nullable()
+            ->constrained('pesanans', 'id_pesanan')
+            ->onDelete('cascade');
+        $table->foreignId('id_admin')
+            ->nullable()
+            ->constrained('admins', 'id_admin')
+            ->onDelete('set null');
+        $table->string('nama_reviewer');
+        $table->integer('rating');
         $table->text('komentar');
-        $table->foreignId('admin_id')->nullable()->constrained('admins')->onDelete('set null');
         $table->text('balasan_admin')->nullable();
-        
+        $table->text('foto_review')->nullable();
+        $table->unsignedInteger('likes_count')->default(0);
+        $table->dateTime('waktu_dibuat')->useCurrent();
         $table->timestamps();
     });
 }

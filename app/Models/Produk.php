@@ -12,15 +12,22 @@ class Produk extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $guarded = ['id'];
+    protected $primaryKey = 'id_produk';
+    protected $guarded = ['id_produk'];
+    protected $appends = ['id'];
+
+    public function getIdAttribute()
+    {
+        return $this->getKey();
+    }
 
     public function kategori()
     {
-        return $this->belongsTo(KategoriProduk::class, 'kategori_id');
+        return $this->belongsTo(KategoriProduk::class, 'id_kategori', 'id_kategori');
     }
 
     public function detail_pesanans()
     {
-        return $this->hasMany(DetailPesanan::class);
+        return $this->hasMany(DetailPesanan::class, 'id_produk', 'id_produk');
     }
 }
