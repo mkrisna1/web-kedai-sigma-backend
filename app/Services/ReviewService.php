@@ -62,7 +62,7 @@ class ReviewService
                 $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
                 $photo->move($directory, $filename);
 
-                return rtrim(config('app.url'), '/') . "/uploads/reviews/{$filename}";
+                return "/uploads/reviews/{$filename}";
             })
             ->values()
             ->all();
