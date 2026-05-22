@@ -191,7 +191,7 @@ class OrderService
                 $this->releaseTableWhenNoActiveOrders($pesanan);
             }
 
-            if ($status === 'selesai' && $this->isTakeawayOrder($pesanan)) {
+            if ($status === 'selesai') {
                 $this->releaseTableWhenNoActiveOrders($pesanan);
             }
 
@@ -325,7 +325,13 @@ class OrderService
             ->where('status_pesanan', 'diproses')
             ->exists();
 
-        if (! $hasActiveOrder) {
+        $hasActiveReservation = Reservasi::query()
+            ->where('id_meja', $pesanan->id_meja)
+            ->whereDate('tgl_reservasi', today()->toDateString())
+            ->where('status_reservasi', 'dikonfirmasi')
+            ->exists();
+
+        if (! $hasActiveOrder && ! $hasActiveReservation) {
             Meja::query()
                 ->whereKey($pesanan->id_meja)
                 ->where('status_meja', 'active')

@@ -26,7 +26,7 @@ return new class extends Migration
             $table->date('tgl_reservasi');
             $table->time('jam_reservasi');
             $table->integer('jml_orang');
-            $table->enum('status_reservasi', ['menunggu_konfirmasi', 'dikonfirmasi', 'dibatalkan'])->default('menunggu_konfirmasi');
+            $table->enum('status_reservasi', ['menunggu_konfirmasi', 'dikonfirmasi', 'selesai', 'dibatalkan'])->default('menunggu_konfirmasi');
             $table->string('catatan_reservasi')->nullable();
             $table->timestamps();
         });

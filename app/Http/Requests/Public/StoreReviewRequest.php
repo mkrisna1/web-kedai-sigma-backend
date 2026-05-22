@@ -18,7 +18,7 @@ class StoreReviewRequest extends FormRequest
             'rating'         => 'required|integer|min:1|max:5',
             'komentar'       => 'required|string',
             'photos'         => 'nullable|array|max:5',
-            'photos.*'       => 'image|mimes:jpg,jpeg,png,webp',
+            'photos.*'       => 'image|mimes:jpg,jpeg,png',
         ];
     }
 }
