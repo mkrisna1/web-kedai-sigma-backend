@@ -43,4 +43,10 @@ return [
         'finish_url' => env('MIDTRANS_FINISH_URL', env('FRONTEND_URL', 'http://localhost:5173')),
     ],
 
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_KEY'),
+        'api_version' => env('XENDIT_API_VERSION', '2022-07-31'),
+        'expiry_minutes' => (int) env('XENDIT_EXPIRY_MINUTES', 10),
+    ],
+
 ];

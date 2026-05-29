@@ -341,7 +341,7 @@ class OrderService
     private function isGatewayValidatedPaymentOrder(Pesanan $pesanan): bool
     {
         return $this->isOnlinePaymentOrder($pesanan) &&
-            ($pesanan->payment_provider ?? null) === 'midtrans_gopay';
+            in_array($pesanan->payment_provider ?? null, ['midtrans_gopay', 'xendit_qris'], true);
     }
 
     private function isStaticQrisOrder(Pesanan $pesanan): bool

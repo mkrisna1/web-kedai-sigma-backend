@@ -45,9 +45,9 @@ class CheckoutController extends Controller
             'success' => true,
             'data' => [
                 'qris_enabled' => true,
-                'provider' => $isGatewayConfigured ? 'midtrans_gopay' : 'static_qris',
-                'message' => $this->paymentGatewayService->isConfigured()
-                    ? 'QRIS siap digunakan.'
+                'provider' => $isGatewayConfigured ? 'xendit_qris' : 'static_qris',
+                'message' => $isGatewayConfigured
+                    ? 'QRIS dinamis Xendit siap digunakan.'
                     : 'QRIS statis aktif. Pastikan nominal yang dibayar sama dengan total pesanan.',
             ],
         ]);
@@ -66,6 +66,16 @@ class CheckoutController extends Controller
     public function notification(Request $request)
     {
         $this->paymentGatewayService->handleNotification($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OK',
+        ]);
+    }
+
+    public function xenditWebhook(Request $request)
+    {
+        $this->paymentGatewayService->handleXenditWebhook($request->all());
 
         return response()->json([
             'success' => true,
