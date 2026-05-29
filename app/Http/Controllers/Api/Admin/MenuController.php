@@ -35,7 +35,7 @@ class MenuController extends Controller
     {
         $this->normalizeRequest($request);
 
-        $data = $request->validate($this->rules());
+        $data = $request->validate($this->rules(), $this->messages());
 
         return response()->json([
             'success' => true,
@@ -48,7 +48,7 @@ class MenuController extends Controller
     {
         $this->normalizeRequest($request);
 
-        $data = $request->validate($this->rules(false, $produk));
+        $data = $request->validate($this->rules(false, $produk), $this->messages());
 
         return response()->json([
             'success' => true,
@@ -96,5 +96,14 @@ class MenuController extends Controller
                 'nama_produk' => trim((string) $request->input('nama_produk')),
             ]);
         }
+    }
+
+    private function messages(): array
+    {
+        return [
+            'foto_produk.image' => 'File menu harus berupa foto, bukan dokumen.',
+            'foto_produk.mimes' => 'Foto menu hanya boleh JPG, PNG, atau WEBP.',
+            'foto_produk.max' => 'Ukuran foto menu maksimal 2MB.',
+        ];
     }
 }

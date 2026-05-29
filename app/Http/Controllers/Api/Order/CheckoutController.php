@@ -39,14 +39,16 @@ class CheckoutController extends Controller
 
     public function paymentConfig()
     {
+        $isGatewayConfigured = $this->paymentGatewayService->isConfigured();
+
         return response()->json([
             'success' => true,
             'data' => [
-                'qris_enabled' => $this->paymentGatewayService->isConfigured(),
-                'provider' => 'midtrans_gopay',
+                'qris_enabled' => true,
+                'provider' => $isGatewayConfigured ? 'midtrans_gopay' : 'static_qris',
                 'message' => $this->paymentGatewayService->isConfigured()
                     ? 'QRIS siap digunakan.'
-                    : 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
+                    : 'QRIS statis aktif. Pastikan nominal yang dibayar sama dengan total pesanan.',
             ],
         ]);
     }

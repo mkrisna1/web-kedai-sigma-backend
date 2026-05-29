@@ -42,14 +42,6 @@ class OrderService
             $data['tipe_pesanan'] = 'takeaway';
         }
 
-        $isQrPayment = ($data['metode_pembayaran'] ?? null) === 'qris';
-
-        if ($isQrPayment && ! $this->paymentGatewayService->isConfigured()) {
-            throw ValidationException::withMessages([
-                'metode_pembayaran' => 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
-            ]);
-        }
-
         return DB::transaction(function () use ($data) {
             $meja = Meja::find($data['meja_id']);
 
@@ -162,7 +154,7 @@ class OrderService
         return DB::transaction(function () use ($pesanan, $status) {
             if (
                 in_array($status, ['diproses', 'selesai'], true) &&
-                $this->isOnlinePaymentOrder($pesanan) &&
+                $this->isGatewayValidatedPaymentOrder($pesanan) &&
                 $pesanan->status_pembayaran !== 'lunas'
             ) {
                 throw ValidationException::withMessages([
@@ -176,7 +168,9 @@ class OrderService
 
             if (Schema::hasColumn('pesanans', 'status_pembayaran')) {
                 $payload['status_pembayaran'] =
-                    $status === 'selesai' || $pesanan->status_pembayaran === 'lunas'
+                    $status === 'selesai' ||
+                    $pesanan->status_pembayaran === 'lunas' ||
+                    ($status === 'diproses' && $this->isStaticQrisOrder($pesanan))
                         ? 'lunas'
                         : 'belum_bayar';
             }
@@ -342,5 +336,17 @@ class OrderService
     {
         return Schema::hasColumn('pesanans', 'metode_pembayaran') &&
             in_array($pesanan->metode_pembayaran, ['qris', 'gopay'], true);
+    }
+
+    private function isGatewayValidatedPaymentOrder(Pesanan $pesanan): bool
+    {
+        return $this->isOnlinePaymentOrder($pesanan) &&
+            ($pesanan->payment_provider ?? null) === 'midtrans_gopay';
+    }
+
+    private function isStaticQrisOrder(Pesanan $pesanan): bool
+    {
+        return $this->isOnlinePaymentOrder($pesanan) &&
+            ($pesanan->payment_provider ?? null) === 'static_qris';
     }
 }

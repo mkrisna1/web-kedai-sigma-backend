@@ -18,9 +18,7 @@ class PaymentGatewayService
     public function createGoPayPayment(Pesanan $pesanan): Pesanan
     {
         if (! $this->isConfigured()) {
-            throw ValidationException::withMessages([
-                'metode_pembayaran' => 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
-            ]);
+            return $this->createStaticQrisPayment($pesanan);
         }
 
         $pesanan->loadMissing(['detail_pesanans.produk', 'meja']);
@@ -73,6 +71,24 @@ class PaymentGatewayService
             'payment_qr_url' => $this->findActionUrl($payload['actions'] ?? [], 'generate-qr-code'),
             'payment_deeplink_url' => $this->findActionUrl($payload['actions'] ?? [], 'deeplink-redirect'),
             'payment_expired_at' => $expiresAt,
+            'payment_status_checked_at' => now(),
+        ];
+
+        $pesanan->update($this->onlyExistingPaymentColumns($updates));
+
+        return $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']);
+    }
+
+    public function createStaticQrisPayment(Pesanan $pesanan): Pesanan
+    {
+        $reference = $this->buildReference($pesanan);
+        $updates = [
+            'status_pembayaran' => 'belum_bayar',
+            'metode_pembayaran' => 'qris',
+            'payment_provider' => 'static_qris',
+            'payment_reference' => $reference,
+            'payment_status' => 'pending_manual',
+            'payment_expired_at' => now()->addMinutes(max($this->expiryMinutes(), 10)),
             'payment_status_checked_at' => now(),
         ];
 
