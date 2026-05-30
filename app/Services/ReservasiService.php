@@ -41,11 +41,10 @@ class ReservasiService
             }
         }
 
-        if ($reservationDate && $reservationTime) {
-            $query->whereDoesntHave('reservasis', function ($reservationQuery) use ($reservationDate, $reservationTime) {
+        if ($reservationDate) {
+            $query->whereDoesntHave('reservasis', function ($reservationQuery) use ($reservationDate) {
                 $reservationQuery
                     ->whereDate('tgl_reservasi', Carbon::parse($reservationDate)->toDateString())
-                    ->whereTime('jam_reservasi', $reservationTime)
                     ->whereIn('status_reservasi', ['menunggu_konfirmasi', 'dikonfirmasi']);
             });
         }
@@ -122,7 +121,7 @@ class ReservasiService
                 $this->markReservedTableUsed($reservasi, $previousStatus, $previousMejaId);
             }
 
-            if ($statusReservasi === 'dibatalkan') {
+            if (in_array($statusReservasi, ['selesai', 'dibatalkan'], true)) {
                 $this->releaseTableWhenUnused($reservasi);
             }
 
@@ -288,21 +287,20 @@ class ReservasiService
         ?string $reservationTime,
         ?int $ignoredReservasiId = null
     ): void {
-        if (! $reservationDate || ! $reservationTime) {
+        if (! $reservationDate) {
             return;
         }
 
         $hasConflict = Reservasi::query()
             ->where('id_meja', $mejaId)
             ->whereDate('tgl_reservasi', Carbon::parse($reservationDate)->toDateString())
-            ->whereTime('jam_reservasi', $reservationTime)
             ->whereIn('status_reservasi', ['menunggu_konfirmasi', 'dikonfirmasi'])
             ->when($ignoredReservasiId, fn ($query) => $query->where('id_reservasi', '!=', $ignoredReservasiId))
             ->exists();
 
         if ($hasConflict) {
             throw ValidationException::withMessages([
-                'meja_id' => 'Meja sudah dipesan pada tanggal dan jam tersebut.',
+                'meja_id' => 'Meja sudah dipesan pada tanggal tersebut.',
             ]);
         }
     }

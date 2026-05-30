@@ -39,16 +39,20 @@ class CheckoutController extends Controller
 
     public function paymentConfig()
     {
-        $isGatewayConfigured = $this->paymentGatewayService->isConfigured();
+        $isConfigured = $this->paymentGatewayService->isConfigured();
+        $provider = $this->paymentGatewayService->provider();
+        $message = match ($provider) {
+            'static_qris' => 'QRIS statis merchant siap digunakan. Pembayaran dikonfirmasi admin.',
+            'xendit_qris', 'midtrans_gopay' => 'QRIS dinamis gateway siap digunakan.',
+            default => 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
+        };
 
         return response()->json([
             'success' => true,
             'data' => [
-                'qris_enabled' => true,
-                'provider' => $isGatewayConfigured ? 'xendit_qris' : 'static_qris',
-                'message' => $isGatewayConfigured
-                    ? 'QRIS dinamis Xendit siap digunakan.'
-                    : 'QRIS statis aktif. Pastikan nominal yang dibayar sama dengan total pesanan.',
+                'qris_enabled' => $isConfigured,
+                'provider' => $provider,
+                'message' => $message,
             ],
         ]);
     }

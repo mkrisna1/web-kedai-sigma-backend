@@ -24,7 +24,7 @@ return new class extends Migration
                     tgl_reservasi date not null,
                     jam_reservasi time not null,
                     jml_orang integer not null,
-                    status_reservasi varchar check (status_reservasi in ('menunggu_konfirmasi', 'dikonfirmasi', 'dibatalkan')) not null default 'menunggu_konfirmasi',
+                    status_reservasi varchar check (status_reservasi in ('menunggu_konfirmasi', 'dikonfirmasi', 'selesai', 'dibatalkan')) not null default 'menunggu_konfirmasi',
                     catatan_reservasi varchar,
                     created_at datetime,
                     updated_at datetime,
