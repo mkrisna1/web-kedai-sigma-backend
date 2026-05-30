@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Review;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Str;
 
 class ReviewService
 {
@@ -53,16 +52,10 @@ class ReviewService
             })
             ->take(5)
             ->map(function (UploadedFile $photo) {
-                $directory = public_path('uploads/reviews');
+                $mimeType = $photo->getMimeType() ?: 'image/jpeg';
+                $contents = file_get_contents($photo->getRealPath());
 
-                if (! is_dir($directory)) {
-                    mkdir($directory, 0775, true);
-                }
-
-                $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
-                $photo->move($directory, $filename);
-
-                return "/uploads/reviews/{$filename}";
+                return "data:{$mimeType};base64,".base64_encode($contents);
             })
             ->values()
             ->all();

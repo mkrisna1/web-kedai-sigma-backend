@@ -6,7 +6,6 @@ use App\Models\KategoriProduk;
 use App\Models\Produk;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 
 class AdminMenuService
 {
@@ -69,9 +68,10 @@ class AdminMenuService
 
     private function storePhoto(UploadedFile $photo): string
     {
-        $path = $photo->store('menu', 'public');
+        $mimeType = $photo->getMimeType() ?: 'image/jpeg';
+        $contents = file_get_contents($photo->getRealPath());
 
-        return "/storage/{$path}";
+        return "data:{$mimeType};base64,".base64_encode($contents);
     }
 
     private function deletePhoto(?string $photoUrl): void
@@ -86,7 +86,10 @@ class AdminMenuService
             return;
         }
 
-        Storage::disk('public')->delete(substr($path, strlen('/storage/')));
+        if (str_starts_with($path, '/storage/menu/')) {
+            // Legacy local uploads are not persisted on serverless production.
+            return;
+        }
     }
 
     private function normalizePayload(array $data): array

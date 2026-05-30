@@ -84,3 +84,4 @@ Route::prefix('qr')->group(function () {
 });
 
 Route::post('/payment/midtrans/notification', [CheckoutController::class, 'notification']);
+Route::post('/payment/xendit/webhook', [CheckoutController::class, 'xenditWebhook']);

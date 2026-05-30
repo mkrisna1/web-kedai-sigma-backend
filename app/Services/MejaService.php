@@ -18,6 +18,7 @@ class MejaService
     {
         $this->ensureDefaultTables();
         $this->tableAvailabilityService->releaseStaleOccupiedTables();
+        $this->normalizeQrCodes();
 
         return Meja::orderBy('nomor_meja')->get();
     }
@@ -124,12 +125,30 @@ class MejaService
                 $meja->update(['nomor_meja' => $nomorMeja]);
             }
 
-            if (! $meja->qr_code) {
+            if (! $meja->qr_code || $this->isLocalQrCode($meja->qr_code)) {
                 $meja->update([
                     'qr_code' => $this->frontendUrl() . "/qr/menu?meja_id={$meja->getKey()}",
                 ]);
             }
         }
+    }
+
+    private function normalizeQrCodes(): void
+    {
+        Meja::query()
+            ->where(function ($query) {
+                $query
+                    ->whereNull('qr_code')
+                    ->orWhere('qr_code', '')
+                    ->orWhere('qr_code', 'like', 'http://localhost:%')
+                    ->orWhere('qr_code', 'like', 'http://127.0.0.1:%');
+            })
+            ->get()
+            ->each(function (Meja $meja) {
+                $meja->update([
+                    'qr_code' => $this->frontendUrl() . "/qr/menu?meja_id={$meja->getKey()}",
+                ]);
+            });
     }
 
     private function normalizePayload(array $data): array
@@ -196,12 +215,21 @@ class MejaService
 
     private function frontendUrl(?string $frontendUrl = null): string
     {
-        $url = trim($frontendUrl ?: env('FRONTEND_URL', 'http://127.0.0.1:5173'));
+        $candidate = trim((string) $frontendUrl);
+        $configured = trim((string) env('FRONTEND_URL', 'http://127.0.0.1:5173'));
+        $url = $candidate && ! $this->isLocalQrCode($candidate)
+            ? $candidate
+            : $configured;
 
         if (! preg_match('/^https?:\/\//i', $url)) {
             $url = 'http://127.0.0.1:5173';
         }
 
         return rtrim($url, '/');
+    }
+
+    private function isLocalQrCode(?string $url): bool
+    {
+        return (bool) preg_match('/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i', (string) $url);
     }
 }

@@ -18,7 +18,17 @@ class StoreReviewRequest extends FormRequest
             'rating'         => 'required|integer|min:1|max:5',
             'komentar'       => 'required|string',
             'photos'         => 'nullable|array|max:5',
-            'photos.*'       => 'image|mimes:jpg,jpeg,png',
+            'photos.*'       => 'image|mimes:jpg,jpeg,png,webp|max:3072',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'photos.max' => 'Maksimal 5 foto review.',
+            'photos.*.image' => 'File review harus berupa foto, bukan dokumen.',
+            'photos.*.mimes' => 'Foto review hanya boleh JPG, PNG, atau WEBP.',
+            'photos.*.max' => 'Ukuran tiap foto review maksimal 3MB.',
         ];
     }
 }
