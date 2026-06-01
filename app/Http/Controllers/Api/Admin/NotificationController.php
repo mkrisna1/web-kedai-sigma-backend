@@ -9,6 +9,49 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function index()
+    {
+        $orders = Pesanan::query()
+            ->withCount('detail_pesanans')
+            ->with('meja:id_meja,nomor_meja')
+            ->where('status_pesanan', 'menunggu_konfirmasi')
+            ->where('is_notif_read', false)
+            ->latest('tgl_pesanan')
+            ->limit(20)
+            ->get([
+                'id_pesanan',
+                'id_meja',
+                'tgl_pesanan',
+                'created_at',
+                'status_pesanan',
+                'is_notif_read',
+            ]);
+
+        $reservations = Reservasi::query()
+            ->where('status_reservasi', 'menunggu_konfirmasi')
+            ->where('is_notif_read', false)
+            ->latest('created_at')
+            ->limit(20)
+            ->get([
+                'id_reservasi',
+                'nama_reservasi',
+                'jml_orang',
+                'tgl_reservasi',
+                'jam_reservasi',
+                'status_reservasi',
+                'is_notif_read',
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'orders' => $orders,
+                'reservations' => $reservations,
+                'total' => $orders->count() + $reservations->count(),
+            ],
+        ]);
+    }
+
     public function markAsRead(Request $request)
     {
         $data = $request->validate([
@@ -30,8 +73,12 @@ class NotificationController extends Controller
 
     public function markAllAsRead()
     {
-        Pesanan::where('is_notif_read', false)->update(['is_notif_read' => true]);
-        Reservasi::where('is_notif_read', false)->update(['is_notif_read' => true]);
+        Pesanan::where('status_pesanan', 'menunggu_konfirmasi')
+            ->where('is_notif_read', false)
+            ->update(['is_notif_read' => true]);
+        Reservasi::where('status_reservasi', 'menunggu_konfirmasi')
+            ->where('is_notif_read', false)
+            ->update(['is_notif_read' => true]);
 
         return response()->json([
             'success' => true,

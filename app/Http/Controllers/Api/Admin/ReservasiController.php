@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateReservasiStatusRequest;
 use App\Models\Reservasi;
 use App\Services\ReservasiService;
+use Illuminate\Http\Request;
 
 class ReservasiController extends Controller
 {
@@ -14,11 +15,19 @@ class ReservasiController extends Controller
     ) {
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $validated = $request->validate([
+            'date' => 'nullable|date',
+            'status' => 'nullable|in:menunggu_konfirmasi,dikonfirmasi,selesai,dibatalkan',
+        ]);
+
         return response()->json([
             'success' => true,
-            'data' => $this->reservasiService->getAllForAdmin(),
+            'data' => $this->reservasiService->getAllForAdmin(
+                $validated['date'] ?? null,
+                $validated['status'] ?? null
+            ),
         ]);
     }
 

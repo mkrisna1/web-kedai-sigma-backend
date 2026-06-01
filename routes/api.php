@@ -65,6 +65,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::get('/laporan', [LaporanController::class, 'index']);
     
     // Notifikasi
+    Route::get('/notifikasi', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'index']);
     Route::post('/notifikasi/read', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markAsRead']);
     Route::post('/notifikasi/read-all', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markAllAsRead']);
 });

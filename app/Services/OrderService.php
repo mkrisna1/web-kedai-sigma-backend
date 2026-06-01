@@ -135,12 +135,13 @@ class OrderService
         });
     }
 
-    public function getAdminOrders()
+    public function getAdminOrders(?string $date = null)
     {
         $this->deleteExpiredCancelledOrders();
         $this->tableAvailabilityService->releaseStaleOccupiedTables();
 
         $orders = Pesanan::with(['meja', 'reservasi', 'detail_pesanans.produk'])
+            ->when($date, fn ($query) => $query->whereDate('tgl_pesanan', $date))
             ->latest('tgl_pesanan')
             ->get();
 

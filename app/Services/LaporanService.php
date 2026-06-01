@@ -17,8 +17,8 @@ class LaporanService
         $isAllTime = $date === 'all';
         $base = ($date && !$isAllTime) ? Carbon::parse($date) : now();
         [$summaryStart, $summaryEnd] = $this->resolveRange($period, $isAllTime ? null : $date);
-        $logStart = $base->copy()->startOfDay();
-        $logEnd = $base->copy()->endOfDay();
+        $logStart = $summaryStart;
+        $logEnd = $summaryEnd;
         [$exportStart, $exportEnd] = $this->resolveExportRange($exportPeriod, $base);
         [$previousSummaryStart, $previousSummaryEnd] = $this->resolvePreviousRange($period, $summaryStart, $summaryEnd);
 
@@ -83,8 +83,8 @@ class LaporanService
             'export_period' => $exportPeriod,
             'start' => $isAllTime ? null : $summaryStart->toDateTimeString(),
             'end' => $isAllTime ? null : $summaryEnd->toDateTimeString(),
-            'log_start' => $logStart->toDateTimeString(),
-            'log_end' => $logEnd->toDateTimeString(),
+            'log_start' => $isAllTime ? null : $logStart->toDateTimeString(),
+            'log_end' => $isAllTime ? null : $logEnd->toDateTimeString(),
             'export_start' => $exportStart->toDateTimeString(),
             'export_end' => $exportEnd->toDateTimeString(),
             'total_penjualan' => $totalPenjualan,

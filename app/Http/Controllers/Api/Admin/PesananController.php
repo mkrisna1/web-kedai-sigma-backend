@@ -14,11 +14,15 @@ class PesananController extends Controller
     ) {
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $validated = $request->validate([
+            'date' => 'nullable|date',
+        ]);
+
         return response()->json([
             'success' => true,
-            'data' => $this->orderService->getAdminOrders(),
+            'data' => $this->orderService->getAdminOrders($validated['date'] ?? null),
         ]);
     }
 
