@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Contracts\View\Factory as ViewFactoryContract;
 use Illuminate\Contracts\View\View as ViewContract;
+use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\ViewServiceProvider;
 
@@ -14,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->register(FilesystemServiceProvider::class);
         $this->app->register(ViewServiceProvider::class);
 
         if (! $this->app->bound('view')) {
