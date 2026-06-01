@@ -57,6 +57,7 @@ class DashboardService
             'meja_sisa' => $availableTables,
             'total_meja' => $totalTables,
             'reservasi_belum_diproses' => Reservasi::where('status_reservasi', 'menunggu_konfirmasi')->count(),
+            'total_reservasi' => Reservasi::whereDate('tgl_reservasi', today())->count(),
             'transaksi_terakhir' => Pesanan::with(['meja', 'detail_pesanans.produk'])
                 ->whereBetween('tgl_pesanan', [$start, $end])
                 ->where('status_pesanan', '!=', 'dibatalkan')

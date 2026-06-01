@@ -8,6 +8,7 @@ use App\Models\Reservasi;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class ReservasiService
@@ -97,6 +98,10 @@ class ReservasiService
                 'status_reservasi' => $statusReservasi,
             ];
 
+            if ($statusReservasi !== 'menunggu_konfirmasi' && Schema::hasColumn('reservasis', 'is_notif_read')) {
+                $data['is_notif_read'] = true;
+            }
+
             if ($adminId !== null) {
                 $data['id_admin'] = $adminId;
             }
@@ -105,7 +110,10 @@ class ReservasiService
                 $data['id_meja'] = $mejaId;
             }
 
-            if ($statusReservasi === 'dikonfirmasi') {
+            if (
+                in_array($statusReservasi, ['menunggu_konfirmasi', 'dikonfirmasi'], true) &&
+                ($data['id_meja'] ?? $reservasi->id_meja)
+            ) {
                 $this->ensureNoScheduleConflict(
                     (int) ($data['id_meja'] ?? $reservasi->id_meja),
                     $reservasi->tgl_reservasi,
@@ -291,16 +299,17 @@ class ReservasiService
             return;
         }
 
-        $hasConflict = Reservasi::query()
+        $conflictQuery = Reservasi::query()
             ->where('id_meja', $mejaId)
             ->whereDate('tgl_reservasi', Carbon::parse($reservationDate)->toDateString())
             ->whereIn('status_reservasi', ['menunggu_konfirmasi', 'dikonfirmasi'])
-            ->when($ignoredReservasiId, fn ($query) => $query->where('id_reservasi', '!=', $ignoredReservasiId))
-            ->exists();
+            ->when($ignoredReservasiId, fn ($query) => $query->where('id_reservasi', '!=', $ignoredReservasiId));
+
+        $hasConflict = $conflictQuery->exists();
 
         if ($hasConflict) {
             throw ValidationException::withMessages([
-                'meja_id' => 'Meja sudah dipesan pada tanggal tersebut.',
+                'meja_id' => 'Meja sudah dipesan pada tanggal tersebut. Admin harus menandai reservasi selesai/dibatalkan dulu sebelum meja bisa dipakai reservasi lain.',
             ]);
         }
     }

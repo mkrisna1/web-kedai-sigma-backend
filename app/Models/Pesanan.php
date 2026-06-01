@@ -14,11 +14,34 @@ class Pesanan extends Model
 
     protected $primaryKey = 'id_pesanan';
     protected $guarded = ['id_pesanan'];
-    protected $appends = ['id'];
+    protected $appends = ['id', 'receipt_token'];
 
     public function getIdAttribute()
     {
         return $this->getKey();
+    }
+
+    public function getReceiptTokenAttribute(): string
+    {
+        return $this->makeReceiptToken();
+    }
+
+    public function hasValidReceiptToken(?string $token): bool
+    {
+        return is_string($token) && hash_equals($this->makeReceiptToken(), $token);
+    }
+
+    private function makeReceiptToken(): string
+    {
+        $createdAt = $this->created_at
+            ? $this->created_at->timestamp
+            : (string) $this->tgl_pesanan;
+
+        return hash_hmac(
+            'sha256',
+            implode('|', [$this->getKey(), $createdAt]),
+            (string) config('app.key')
+        );
     }
 
     public function meja()
@@ -28,7 +51,7 @@ class Pesanan extends Model
 
     public function reservasi()
     {
-        return $this->belongsTo(Reservasi::class, 'id_reservasi', 'id_reservasi'); 
+        return $this->belongsTo(Reservasi::class, 'id_reservasi', 'id_reservasi');
     }
 
     public function detail_pesanans()

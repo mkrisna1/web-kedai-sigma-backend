@@ -39,31 +39,22 @@ class CheckoutController extends Controller
 
     public function paymentConfig()
     {
-        $isConfigured = $this->paymentGatewayService->isConfigured();
-        $provider = $this->paymentGatewayService->provider();
-        $message = match ($provider) {
-            'static_qris' => 'QRIS statis merchant siap digunakan. Pembayaran dikonfirmasi admin.',
-            'xendit_qris', 'midtrans_gopay' => 'QRIS dinamis gateway siap digunakan.',
-            default => 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
-        };
-
         return response()->json([
             'success' => true,
             'data' => [
-                'qris_enabled' => $isConfigured,
-                'provider' => $provider,
-                'message' => $message,
+                'qris_enabled' => true,
+                'provider' => 'static_qris',
+                'confirmation' => 'manual_admin',
+                'message' => 'QRIS statis aktif. Pembayaran dikonfirmasi manual oleh kasir/admin.',
             ],
         ]);
     }
 
     public function paymentStatus(Pesanan $pesanan)
     {
-        $pesanan = $this->paymentGatewayService->syncPaymentStatus($pesanan);
-
         return response()->json([
             'success' => true,
-            'data' => $pesanan,
+            'data' => $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']),
         ]);
     }
 

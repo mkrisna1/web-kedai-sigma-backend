@@ -22,6 +22,11 @@ Route::prefix('admin')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// Admin routes yang butuh custom auth logic (seperti public receipt by token)
+Route::prefix('admin')->group(function () {
+    Route::get('/pesanan/{pesanan}/receipt', [AdminPesananController::class, 'receipt']);
+});
+
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -43,7 +48,8 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::patch('/pesanan/{pesanan}/status', [AdminPesananController::class, 'updateStatus']);
     Route::patch('/pesanan/{pesanan}/payment', [AdminPesananController::class, 'updatePayment']);
     Route::patch('/pesanan/{pesanan}/stock-issue', [AdminPesananController::class, 'resolveStockIssue']);
-    Route::get('/pesanan/{pesanan}/receipt', [AdminPesananController::class, 'receipt']);
+    // Receipt dipindah ke luar middleware agar bisa diakses public dengan token
+
 
     Route::get('/reservasi', [AdminReservasiController::class, 'index']);
     Route::patch('/reservasi/{reservasi}/status', [AdminReservasiController::class, 'updateStatus']);
@@ -56,6 +62,10 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::delete('/review/{review}', [AdminReviewController::class, 'destroy']);
 
     Route::get('/laporan', [LaporanController::class, 'index']);
+    
+    // Notifikasi
+    Route::post('/notifikasi/read', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markAsRead']);
+    Route::post('/notifikasi/read-all', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markAllAsRead']);
 });
 
 // public

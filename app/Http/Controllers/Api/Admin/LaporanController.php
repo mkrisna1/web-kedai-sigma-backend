@@ -16,9 +16,9 @@ class LaporanController extends Controller
     public function index(Request $request)
     {
         $data = $request->validate([
-            'period' => 'nullable|in:day,week,month',
-            'date' => 'nullable|date',
-            'export_period' => 'nullable|in:day,month,year',
+            'period' => 'nullable|in:day,week,month,year',
+            'date' => 'nullable|string',
+            'export_period' => 'nullable|in:day,week,month,year',
         ]);
 
         return response()->json([

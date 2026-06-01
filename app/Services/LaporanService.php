@@ -14,47 +14,54 @@ class LaporanService
         string $exportPeriod = 'day'
     ): array
     {
-        $base = $date ? Carbon::parse($date) : now();
+        $isAllTime = $date === 'all';
+        $base = ($date && !$isAllTime) ? Carbon::parse($date) : now();
+        [$summaryStart, $summaryEnd] = $this->resolveRange($period, $isAllTime ? null : $date);
         $logStart = $base->copy()->startOfDay();
         $logEnd = $base->copy()->endOfDay();
         [$exportStart, $exportEnd] = $this->resolveExportRange($exportPeriod, $base);
-        $yearStart = $base->copy()->startOfYear();
-        $yearEnd = $base->copy()->endOfYear();
-        $previousYearStart = $base->copy()->subYear()->startOfYear();
-        $previousYearEnd = $base->copy()->subYear()->endOfYear();
+        [$previousSummaryStart, $previousSummaryEnd] = $this->resolvePreviousRange($period, $summaryStart, $summaryEnd);
 
         $orders = Pesanan::with(['meja', 'detail_pesanans.produk.kategori'])
-            ->whereBetween('tgl_pesanan', [$yearStart, $yearEnd])
+            ->when(!$isAllTime, fn ($query) => $query->whereBetween('tgl_pesanan', [$summaryStart, $summaryEnd]))
             ->latest('tgl_pesanan')
             ->get();
 
-        $validOrders = $orders->where('status_pesanan', 'selesai');
+        $validOrders = $orders->whereIn('status_pesanan', ['diproses', 'selesai']);
         $previousValidOrders = Pesanan::query()
-            ->whereBetween('tgl_pesanan', [$previousYearStart, $previousYearEnd])
-            ->where('status_pesanan', 'selesai')
-            ->get();
-        $logOrders = Pesanan::with(['meja', 'detail_pesanans.produk.kategori'])
-            ->whereBetween('tgl_pesanan', [$logStart, $logEnd])
+            ->when(!$isAllTime, fn ($query) => $query->whereBetween('tgl_pesanan', [$previousSummaryStart, $previousSummaryEnd]))
             ->whereIn('status_pesanan', ['diproses', 'selesai'])
-            ->latest('tgl_pesanan')
             ->get();
-        $exportOrders = Pesanan::with(['meja', 'detail_pesanans.produk.kategori'])
-            ->whereBetween('tgl_pesanan', [$exportStart, $exportEnd])
+        $logOrdersQuery = Pesanan::with(['meja', 'detail_pesanans.produk.kategori'])
             ->whereIn('status_pesanan', ['diproses', 'selesai'])
-            ->latest('tgl_pesanan')
-            ->get();
+            ->latest('tgl_pesanan');
+            
+        if (!$isAllTime) {
+            $logOrdersQuery->whereBetween('tgl_pesanan', [$logStart, $logEnd]);
+        }
+        $logOrders = $logOrdersQuery->get();
+
+        $exportOrdersQuery = Pesanan::with(['meja', 'detail_pesanans.produk.kategori'])
+            ->whereIn('status_pesanan', ['diproses', 'selesai'])
+            ->latest('tgl_pesanan');
+            
+        if (!$isAllTime) {
+            $exportOrdersQuery->whereBetween('tgl_pesanan', [$exportStart, $exportEnd]);
+        }
+        $exportOrders = $exportOrdersQuery->get();
 
         $details = DetailPesanan::with(['pesanan', 'produk.kategori'])
-            ->whereHas('pesanan', function ($query) use ($yearStart, $yearEnd) {
-                $query->whereBetween('tgl_pesanan', [$yearStart, $yearEnd])
+            ->whereHas('pesanan', function ($query) use ($summaryStart, $summaryEnd, $isAllTime) {
+                $query->when(!$isAllTime, fn ($orderQuery) => $orderQuery->whereBetween('tgl_pesanan', [$summaryStart, $summaryEnd]))
                     ->where('status_pesanan', 'selesai');
             })
             ->where('subtotal', '>', 0)
             ->get();
         $detailsWithProduct = $details->filter(fn ($detail) => $detail->produk !== null);
         $bestSellerDetails = DetailPesanan::with(['produk.kategori'])
-            ->whereHas('pesanan', function ($query) {
-                $query->where('status_pesanan', 'selesai');
+            ->whereHas('pesanan', function ($query) use ($summaryStart, $summaryEnd, $isAllTime) {
+                $query->when(!$isAllTime, fn ($orderQuery) => $orderQuery->whereBetween('tgl_pesanan', [$summaryStart, $summaryEnd]))
+                    ->where('status_pesanan', 'selesai');
             })
             ->where('subtotal', '>', 0)
             ->get()
@@ -70,12 +77,12 @@ class LaporanService
             : 0;
 
         return [
-            'period' => 'year',
+            'period' => $isAllTime ? 'all' : $period,
             'analytics_year' => $base->year,
             'log_date' => $base->toDateString(),
             'export_period' => $exportPeriod,
-            'start' => $yearStart->toDateTimeString(),
-            'end' => $yearEnd->toDateTimeString(),
+            'start' => $isAllTime ? null : $summaryStart->toDateTimeString(),
+            'end' => $isAllTime ? null : $summaryEnd->toDateTimeString(),
             'log_start' => $logStart->toDateTimeString(),
             'log_end' => $logEnd->toDateTimeString(),
             'export_start' => $exportStart->toDateTimeString(),
@@ -130,13 +137,25 @@ class LaporanService
         return match ($period) {
             'week' => [$base->copy()->startOfWeek(), $base->copy()->endOfWeek()],
             'month' => [$base->copy()->startOfMonth(), $base->copy()->endOfMonth()],
+            'year' => [$base->copy()->startOfYear(), $base->copy()->endOfYear()],
             default => [$base->copy()->startOfDay(), $base->copy()->endOfDay()],
+        };
+    }
+
+    private function resolvePreviousRange(string $period, Carbon $start, Carbon $end): array
+    {
+        return match ($period) {
+            'week' => [$start->copy()->subWeek(), $end->copy()->subWeek()],
+            'month' => [$start->copy()->subMonth(), $end->copy()->subMonth()],
+            'year' => [$start->copy()->subYear(), $end->copy()->subYear()],
+            default => [$start->copy()->subDay(), $end->copy()->subDay()],
         };
     }
 
     private function resolveExportRange(string $period, Carbon $base): array
     {
         return match ($period) {
+            'week' => [$base->copy()->startOfWeek(), $base->copy()->endOfWeek()],
             'month' => [$base->copy()->startOfMonth(), $base->copy()->endOfMonth()],
             'year' => [$base->copy()->startOfYear(), $base->copy()->endOfYear()],
             default => [$base->copy()->startOfDay(), $base->copy()->endOfDay()],
