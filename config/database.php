@@ -3,14 +3,25 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
-$mysqlSslCa = env('MYSQL_ATTR_SSL_CA');
+$databaseUrl = env('DB_URL')
+    ?: env('DATABASE_URL')
+    ?: env('MYSQL_URL')
+    ?: env('MYSQL_PUBLIC_URL')
+    ?: env('MYSQL_SERVICE_URI');
 
-if (! $mysqlSslCa && env('MYSQL_CA_CERT')) {
+$defaultConnection = env('DB_CONNECTION');
+
+if (! $defaultConnection && $databaseUrl && str_starts_with($databaseUrl, 'mysql')) {
+    $defaultConnection = 'mysql';
+}
+
+$mysqlSslCa = env('MYSQL_ATTR_SSL_CA');
+$mysqlCaCert = env('MYSQL_CA_CERT');
+
+if (! $mysqlSslCa && $mysqlCaCert) {
     $mysqlSslCa = sys_get_temp_dir().'/mysql-ca.pem';
 
-    if (! file_exists($mysqlSslCa)) {
-        file_put_contents($mysqlSslCa, env('MYSQL_CA_CERT'));
-    }
+    file_put_contents($mysqlSslCa, str_replace('\n', "\n", $mysqlCaCert));
 }
 
 return [
@@ -27,7 +38,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => $defaultConnection ?: 'sqlite',
 
     /*
     |--------------------------------------------------------------------------
@@ -56,7 +67,7 @@ return [
 
         'mysql' => [
             'driver' => 'mysql',
-            'url' => env('DB_URL'),
+            'url' => $databaseUrl,
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -76,7 +87,7 @@ return [
 
         'mariadb' => [
             'driver' => 'mariadb',
-            'url' => env('DB_URL'),
+            'url' => $databaseUrl,
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -90,7 +101,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => $mysqlSslCa,
             ]) : [],
         ],
 
