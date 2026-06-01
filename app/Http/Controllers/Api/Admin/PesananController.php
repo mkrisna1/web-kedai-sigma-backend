@@ -68,8 +68,17 @@ class PesananController extends Controller
         ]);
     }
 
-    public function receipt(Pesanan $pesanan)
+    public function receipt(Request $request, Pesanan $pesanan)
     {
+        $isAdminRequest = $request->user('sanctum') !== null;
+
+        if (! $isAdminRequest && ! $pesanan->hasValidReceiptToken($request->query('token'))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token struk tidak valid.',
+            ], 403);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $pesanan->load(['meja', 'reservasi', 'detail_pesanans.produk']),

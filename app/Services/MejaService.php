@@ -20,7 +20,9 @@ class MejaService
         $this->tableAvailabilityService->releaseStaleOccupiedTables();
         $this->normalizeQrCodes();
 
-        return Meja::orderBy('nomor_meja')->get();
+        return Meja::all()
+            ->sortBy(fn (Meja $meja) => $this->extractTableNumber($meja->nomor_meja) ?? (int) $meja->getKey())
+            ->values();
     }
 
     public function create(array $data, ?string $frontendUrl = null): Meja

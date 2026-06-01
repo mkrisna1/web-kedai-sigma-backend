@@ -42,14 +42,6 @@ class OrderService
             $data['tipe_pesanan'] = 'takeaway';
         }
 
-        $isQrPayment = ($data['metode_pembayaran'] ?? null) === 'qris';
-
-        if ($isQrPayment && ! $this->paymentGatewayService->isConfigured()) {
-            throw ValidationException::withMessages([
-                'metode_pembayaran' => 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
-            ]);
-        }
-
         return DB::transaction(function () use ($data) {
             $meja = Meja::find($data['meja_id']);
 
@@ -139,10 +131,6 @@ class OrderService
                 $pesanan->detail_pesanans()->create($detailPayload);
             }
 
-            if (($data['metode_pembayaran'] ?? null) === 'qris') {
-                return $this->paymentGatewayService->createGoPayPayment($pesanan);
-            }
-
             return $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']);
         });
     }
@@ -152,17 +140,34 @@ class OrderService
         $this->deleteExpiredCancelledOrders();
         $this->tableAvailabilityService->releaseStaleOccupiedTables();
 
-        return Pesanan::with(['meja', 'reservasi', 'detail_pesanans.produk'])
+        $orders = Pesanan::with(['meja', 'reservasi', 'detail_pesanans.produk'])
             ->latest('tgl_pesanan')
             ->get();
+            
+        $reservations = Reservasi::where('status_reservasi', 'dikonfirmasi')
+            ->get(['id_meja', 'tgl_reservasi']);
+            
+        $orders->each(function ($order) use ($reservations) {
+            $orderDate = \Carbon\Carbon::parse($order->tgl_pesanan)->toDateString();
+            $order->is_from_reserved_table = $reservations->contains(function ($res) use ($order, $orderDate) {
+                return $res->id_meja === $order->id_meja && \Carbon\Carbon::parse($res->tgl_reservasi)->toDateString() === $orderDate;
+            });
+        });
+
+        return $orders;
     }
 
     public function updateStatus(Pesanan $pesanan, string $status): Pesanan
     {
         return DB::transaction(function () use ($pesanan, $status) {
+            // Hanya blokir jika ada transaksi gateway aktif (QRIS dinamis dengan payment_reference)
+            $isGatewayQris = $this->isOnlinePaymentOrder($pesanan) &&
+                Schema::hasColumn('pesanans', 'payment_reference') &&
+                filled($pesanan->payment_reference);
+
             if (
                 in_array($status, ['diproses', 'selesai'], true) &&
-                $this->isOnlinePaymentOrder($pesanan) &&
+                $isGatewayQris &&
                 $pesanan->status_pembayaran !== 'lunas'
             ) {
                 throw ValidationException::withMessages([
@@ -174,6 +179,10 @@ class OrderService
                 'status_pesanan' => $status,
             ];
 
+            if ($status !== 'menunggu_konfirmasi' && Schema::hasColumn('pesanans', 'is_notif_read')) {
+                $payload['is_notif_read'] = true;
+            }
+
             if (Schema::hasColumn('pesanans', 'status_pembayaran')) {
                 $payload['status_pembayaran'] =
                     $status === 'selesai' || $pesanan->status_pembayaran === 'lunas'
@@ -183,7 +192,7 @@ class OrderService
 
             $pesanan->update($payload);
 
-            if ($status === 'diproses') {
+            if ($status === 'diproses' && ! $this->isTakeawayOrder($pesanan)) {
                 $this->markTableOccupied($pesanan);
             }
 
@@ -191,9 +200,7 @@ class OrderService
                 $this->releaseTableWhenNoActiveOrders($pesanan);
             }
 
-            if ($status === 'selesai') {
-                $this->releaseTableWhenNoActiveOrders($pesanan);
-            }
+
 
             return $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']);
         });
@@ -231,6 +238,10 @@ class OrderService
                     'subtotal' => 0,
                     'opsi_varian' => 'Stok habis',
                 ]);
+                
+                if ($detail->produk) {
+                    $detail->produk->update(['ketersediaan_produk' => 'tidak_tersedia']);
+                }
             }
 
             if ($action === 'replace') {
@@ -247,6 +258,10 @@ class OrderService
 
                 $oldProductName = $detail->produk?->nama_produk ?? 'menu sebelumnya';
                 $quantity = max((int) $detail->jumlah_item, 1);
+
+                if ($detail->produk) {
+                    $detail->produk->update(['ketersediaan_produk' => 'tidak_tersedia']);
+                }
 
                 $detail->update([
                     'id_produk' => $replacement->getKey(),
@@ -278,10 +293,18 @@ class OrderService
             return;
         }
 
-        Meja::query()
+        $meja = Meja::query()
             ->whereKey($pesanan->id_meja)
             ->where('status_meja', 'active')
-            ->update(['used_seats' => 1]);
+            ->first();
+
+        if (! $meja) {
+            return;
+        }
+
+        $meja->update([
+            'used_seats' => max(1, (int) $meja->capacity),
+        ]);
     }
 
     private function resolveProductPrice(Produk $product, ?string $variant): float
@@ -322,7 +345,7 @@ class OrderService
 
         $hasActiveOrder = Pesanan::query()
             ->where('id_meja', $pesanan->id_meja)
-            ->where('status_pesanan', 'diproses')
+            ->whereIn('status_pesanan', ['menunggu_konfirmasi', 'diproses'])
             ->exists();
 
         $hasActiveReservation = Reservasi::query()

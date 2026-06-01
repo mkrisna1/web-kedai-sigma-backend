@@ -44,22 +44,27 @@ class CheckoutController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
+<<<<<<< HEAD
                 'qris_enabled' => $isConfigured,
                 'provider' => $isConfigured ? 'xendit_qris' : 'static_qris',
                 'message' => $isConfigured
                     ? 'QRIS dinamis Xendit siap digunakan.'
                     : 'QRIS belum aktif. Silakan pilih pembayaran tunai dulu.',
+=======
+                'qris_enabled' => true,
+                'provider' => 'static_qris',
+                'confirmation' => 'manual_admin',
+                'message' => 'QRIS statis aktif. Pembayaran dikonfirmasi manual oleh kasir/admin.',
+>>>>>>> e8590a9 (benerin logika reservasi & pesanan)
             ],
         ]);
     }
 
     public function paymentStatus(Pesanan $pesanan)
     {
-        $pesanan = $this->paymentGatewayService->syncPaymentStatus($pesanan);
-
         return response()->json([
             'success' => true,
-            'data' => $pesanan,
+            'data' => $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']),
         ]);
     }
 
