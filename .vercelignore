@@ -3,7 +3,6 @@
 .env.*
 .phpunit.cache
 .vercel
-bootstrap/cache/*.php
 node_modules
 package.json
 package-lock.json
