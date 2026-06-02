@@ -85,7 +85,6 @@ Route::prefix('public')->group(function () {
     // Review
     Route::get('/review', [ReviewController::class, 'index']);
     Route::post('/review', [ReviewController::class, 'store']);
-    Route::post('/review/{review}/like', [ReviewController::class, 'like'])->middleware('throttle:20,1');
 });
 
 Route::prefix('qr')->group(function () {

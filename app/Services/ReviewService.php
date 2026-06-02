@@ -26,13 +26,6 @@ class ReviewService
             ->get();
     }
 
-    public function like(Review $review): Review
-    {
-        $review->increment('likes_count');
-
-        return $review->fresh();
-    }
-
     private function storePhotos(array $photos): array
     {
         $seenHashes = [];

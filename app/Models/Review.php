@@ -15,7 +15,6 @@ class Review extends Model
     protected $appends = ['id', 'nama_pelanggan'];
     protected $casts = [
         'foto_review' => 'array',
-        'likes_count' => 'integer',
     ];
 
     public function getIdAttribute()
@@ -32,5 +31,4 @@ class Review extends Model
     {
         return $this->belongsTo(Admin::class, 'id_admin', 'id_admin');
     }
-
 }

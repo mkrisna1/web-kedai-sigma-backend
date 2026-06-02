@@ -83,7 +83,7 @@ class MenuController extends Controller
             'harga_hot' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
             'harga_ice' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
             'deskripsi_produk' => ['nullable', 'string', 'max:120'],
-            'foto_produk' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'foto_produk' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'opsi_suhu' => ['nullable', 'in:none,hot,ice,hot_ice'],
             'ketersediaan_produk' => [...$requiredRules, 'in:tersedia,tidak_tersedia'],
         ];
