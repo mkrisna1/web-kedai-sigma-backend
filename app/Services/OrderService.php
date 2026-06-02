@@ -135,18 +135,19 @@ class OrderService
         });
     }
 
-    public function getAdminOrders()
+    public function getAdminOrders(?string $date = null)
     {
         $this->deleteExpiredCancelledOrders();
         $this->tableAvailabilityService->releaseStaleOccupiedTables();
 
         $orders = Pesanan::with(['meja', 'reservasi', 'detail_pesanans.produk'])
+            ->when($date, fn ($query) => $query->whereDate('tgl_pesanan', $date))
             ->latest('tgl_pesanan')
             ->get();
-            
+
         $reservations = Reservasi::where('status_reservasi', 'dikonfirmasi')
             ->get(['id_meja', 'tgl_reservasi']);
-            
+
         $orders->each(function ($order) use ($reservations) {
             $orderDate = \Carbon\Carbon::parse($order->tgl_pesanan)->toDateString();
             $order->is_from_reserved_table = $reservations->contains(function ($res) use ($order, $orderDate) {
@@ -238,7 +239,7 @@ class OrderService
                     'subtotal' => 0,
                     'opsi_varian' => 'Stok habis',
                 ]);
-                
+
                 if ($detail->produk) {
                     $detail->produk->update(['ketersediaan_produk' => 'tidak_tersedia']);
                 }

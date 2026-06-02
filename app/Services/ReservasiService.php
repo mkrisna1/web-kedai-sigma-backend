@@ -76,11 +76,13 @@ class ReservasiService
         ]);
     }
 
-    public function getAllForAdmin()
+    public function getAllForAdmin(?string $date = null, ?string $status = null)
     {
         $this->deleteExpiredCancelledReservations();
 
         return Reservasi::with('meja')
+            ->when($date, fn ($query) => $query->whereDate('tgl_reservasi', $date))
+            ->when($status, fn ($query) => $query->where('status_reservasi', $status))
             ->latest('created_at')
             ->get();
     }

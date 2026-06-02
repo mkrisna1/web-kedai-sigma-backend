@@ -12,11 +12,32 @@ class PaymentGatewayService
 {
     public function isConfigured(): bool
     {
-        return $this->isXenditConfigured() || $this->isMidtransConfigured();
+        return $this->isStaticQrisMode() || $this->isXenditConfigured() || $this->isMidtransConfigured();
+    }
+
+    public function provider(): string
+    {
+        if ($this->isStaticQrisMode()) {
+            return 'static_qris';
+        }
+
+        if ($this->isXenditConfigured()) {
+            return 'xendit_qris';
+        }
+
+        if ($this->isMidtransConfigured()) {
+            return 'midtrans_gopay';
+        }
+
+        return 'none';
     }
 
     public function createGoPayPayment(Pesanan $pesanan): Pesanan
     {
+        if ($this->isStaticQrisMode()) {
+            return $this->createStaticQrisPayment($pesanan);
+        }
+
         if ($this->isXenditConfigured()) {
             return $this->createXenditQrisPayment($pesanan);
         }
@@ -169,6 +190,10 @@ class PaymentGatewayService
 
         if (($pesanan->payment_provider ?? null) === 'xendit_qris') {
             return $this->syncXenditPaymentStatus($pesanan);
+        }
+
+        if (($pesanan->payment_provider ?? null) === 'static_qris') {
+            return $pesanan->fresh(['meja', 'reservasi', 'detail_pesanans.produk']);
         }
 
         try {
@@ -384,6 +409,11 @@ class PaymentGatewayService
     private function isXenditConfigured(): bool
     {
         return filled(config('services.xendit.secret_key'));
+    }
+
+    private function isStaticQrisMode(): bool
+    {
+        return config('services.qris.mode', 'static') === 'static';
     }
 
     private function buildQrImageUrl(string $qrString): string

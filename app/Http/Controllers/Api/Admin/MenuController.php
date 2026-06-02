@@ -35,7 +35,7 @@ class MenuController extends Controller
     {
         $this->normalizeRequest($request);
 
-        $data = $request->validate($this->rules());
+        $data = $request->validate($this->rules(), $this->messages());
 
         return response()->json([
             'success' => true,
@@ -48,7 +48,7 @@ class MenuController extends Controller
     {
         $this->normalizeRequest($request);
 
-        $data = $request->validate($this->rules(false, $produk));
+        $data = $request->validate($this->rules(false, $produk), $this->messages());
 
         return response()->json([
             'success' => true,
@@ -76,13 +76,13 @@ class MenuController extends Controller
             'nama_produk' => [
                 ...$requiredRules,
                 'string',
-                'max:100',
+                'max:40',
                 Rule::unique('produks', 'nama_produk')->ignore($produk?->getKey(), 'id_produk'),
             ],
             'harga_produk' => [...$requiredRules, 'numeric', 'min:0', 'max:100000000'],
             'harga_hot' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
             'harga_ice' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
-            'deskripsi_produk' => ['nullable', 'string', 'max:255'],
+            'deskripsi_produk' => ['nullable', 'string', 'max:120'],
             'foto_produk' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'opsi_suhu' => ['nullable', 'in:none,hot,ice,hot_ice'],
             'ketersediaan_produk' => [...$requiredRules, 'in:tersedia,tidak_tersedia'],
@@ -96,5 +96,14 @@ class MenuController extends Controller
                 'nama_produk' => trim((string) $request->input('nama_produk')),
             ]);
         }
+    }
+
+    private function messages(): array
+    {
+        return [
+            'foto_produk.image' => 'File menu harus berupa foto, bukan dokumen.',
+            'foto_produk.mimes' => 'Foto menu hanya boleh JPG, PNG, atau WEBP.',
+            'foto_produk.max' => 'Ukuran foto menu maksimal 2MB.',
+        ];
     }
 }

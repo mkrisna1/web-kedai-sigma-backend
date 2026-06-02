@@ -17,6 +17,7 @@ use App\Http\Controllers\Public\KategoriController;
 use App\Http\Controllers\Public\MenuController;
 use App\Http\Controllers\Public\ReservasiController;
 use App\Http\Controllers\Public\ReviewController;
+use App\Http\Middleware\PublicApiCacheHeaders;
 
 Route::prefix('admin')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -64,6 +65,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::get('/laporan', [LaporanController::class, 'index']);
     
     // Notifikasi
+    Route::get('/notifikasi', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'index']);
     Route::post('/notifikasi/read', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markAsRead']);
     Route::post('/notifikasi/read-all', [\App\Http\Controllers\Api\Admin\NotificationController::class, 'markAllAsRead']);
 });
@@ -71,9 +73,9 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 // public
 Route::prefix('public')->group(function () {
     // Menu & Kategori (udah ada)
-    Route::get('/kategori', [KategoriController::class, 'index']);
-    Route::get('/menu', [MenuController::class, 'index']);
-    Route::get('/best-seller', [MenuController::class, 'bestSeller']);
+    Route::get('/kategori', [KategoriController::class, 'index'])->middleware(PublicApiCacheHeaders::class);
+    Route::get('/menu', [MenuController::class, 'index'])->middleware(PublicApiCacheHeaders::class);
+    Route::get('/best-seller', [MenuController::class, 'bestSeller'])->middleware(PublicApiCacheHeaders::class);
     Route::get('/menu/{id}', [MenuController::class, 'show']);
 
     // Reservasi
@@ -87,9 +89,9 @@ Route::prefix('public')->group(function () {
 });
 
 Route::prefix('qr')->group(function () {
-    Route::get('/menu', [QrMenuController::class, 'index']);
+    Route::get('/menu', [QrMenuController::class, 'index'])->middleware(PublicApiCacheHeaders::class);
     Route::post('/checkout', [CheckoutController::class, 'store']);
-    Route::get('/payment/config', [CheckoutController::class, 'paymentConfig']);
+    Route::get('/payment/config', [CheckoutController::class, 'paymentConfig'])->middleware(PublicApiCacheHeaders::class);
     Route::get('/payment/{pesanan}/status', [CheckoutController::class, 'paymentStatus']);
 });
 

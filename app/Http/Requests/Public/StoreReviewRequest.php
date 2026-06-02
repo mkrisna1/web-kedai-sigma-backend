@@ -21,8 +21,7 @@ class StoreReviewRequest extends FormRequest
             'rating'         => 'required|integer|min:1|max:5',
             'komentar'       => 'required|string',
             'photos'         => 'nullable|array|max:5',
-<<<<<<< HEAD
-            'photos.*'       => 'image|mimes:jpg,jpeg,png,webp|max:3072',
+            'photos.*'       => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
 
@@ -32,10 +31,7 @@ class StoreReviewRequest extends FormRequest
             'photos.max' => 'Maksimal 5 foto review.',
             'photos.*.image' => 'File review harus berupa foto, bukan dokumen.',
             'photos.*.mimes' => 'Foto review hanya boleh JPG, PNG, atau WEBP.',
-            'photos.*.max' => 'Ukuran tiap foto review maksimal 3MB.',
-=======
-            'photos.*'       => 'image|mimes:jpg,jpeg,png|max:2048',
->>>>>>> e8590a9 (benerin logika reservasi & pesanan)
+            'photos.*.max' => 'Ukuran tiap foto review maksimal 2MB.',
         ];
     }
 

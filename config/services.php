@@ -49,4 +49,8 @@ return [
         'expiry_minutes' => (int) env('XENDIT_EXPIRY_MINUTES', 10),
     ],
 
+    'qris' => [
+        'mode' => env('PAYMENT_QRIS_MODE', 'static'),
+    ],
+
 ];
