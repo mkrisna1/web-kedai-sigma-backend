@@ -51,7 +51,6 @@ class AdminMenuService
         $data = $this->normalizePayload($data);
 
         if ($photo) {
-            $this->deletePhoto($produk->foto_produk);
             $data['foto_produk'] = $this->storePhoto($photo);
         }
 
@@ -62,7 +61,6 @@ class AdminMenuService
 
     public function delete(Produk $produk): void
     {
-        $this->deletePhoto($produk->foto_produk);
         $produk->forceDelete();
     }
 
@@ -72,24 +70,6 @@ class AdminMenuService
         $contents = file_get_contents($photo->getRealPath());
 
         return "data:{$mimeType};base64,".base64_encode($contents);
-    }
-
-    private function deletePhoto(?string $photoUrl): void
-    {
-        if (!$photoUrl) {
-            return;
-        }
-
-        $path = parse_url($photoUrl, PHP_URL_PATH) ?: $photoUrl;
-
-        if (!str_starts_with($path, '/storage/menu/')) {
-            return;
-        }
-
-        if (str_starts_with($path, '/storage/menu/')) {
-            // Legacy local uploads are not persisted on serverless production.
-            return;
-        }
     }
 
     private function normalizePayload(array $data): array
